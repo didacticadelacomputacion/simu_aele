@@ -1,4 +1,4 @@
-Mila.Modulo({
+Mila.Módulo({
   define:"Simu.Lenguaje",
   necesita:["$milascript/base","$pequescript/todo"],
   usa:["disenio"]

@@ -1,4 +1,4 @@
-Mila.Modulo({
+Mila.Módulo({
   define:"Simu.Parser",
   necesita:["$milascript/base","$milascript/objeto","$milascript/lista","lenguaje"]
 });

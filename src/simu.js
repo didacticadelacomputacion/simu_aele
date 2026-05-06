@@ -1,4 +1,4 @@
-Mila.Modulo({
+Mila.Módulo({
   define:"Simu",
   necesita:["$milascript/base"],
   usa:["$milascript/pantalla/todo",

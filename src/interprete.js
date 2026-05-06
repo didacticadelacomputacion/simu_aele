@@ -1,4 +1,4 @@
-Mila.Modulo({
+Mila.Módulo({
   define:"Simu.Interprete",
   necesita:["$milascript/base"],
   usaJs:["acorn_interpreter"]
