@@ -153,7 +153,7 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
       ancho = 80;
       modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("ledApagada.svg"),ancho});
       modulo.valor = Mila.Pantalla.nuevaEtiqueta({texto:"-",tamanioLetra:10,ancho:"Maximizar"})
-      return Mila.Pantalla.nuevoPanel({elementos:[
+      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
         modulo.imagen,
         Mila.Pantalla.nuevoPanel({elementos:[
           Mila.Pantalla.nuevaEtiqueta({texto:`pin ${modulo.pin} : `,tamanioLetra:10,ancho:"Maximizar"}),
@@ -164,7 +164,7 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
       });
     case "BUZZER":
       modulo.imagen = Mila.Pantalla.nuevaEtiqueta({texto:"Imagen de un buzzer apagado"});
-      return Mila.Pantalla.nuevoPanel({elementos:[
+      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
         modulo.imagen,
         Mila.Pantalla.nuevaEtiqueta({texto:`. (pin ${modulo.pin})`,tamanioLetra:10})
       ],ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
@@ -177,7 +177,7 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
       ancho = 180;
       modulo.etiqueta = Mila.Pantalla.nuevaEtiqueta({texto:'80 cm',ancho});
       modulo.deslizador = Mila.Pantalla.nuevoDeslizador({ancho, valor:80});
-      return Mila.Pantalla.nuevoPanel({elementos:[
+      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
         Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("sonar.svg"),ancho}),
         modulo.etiqueta,
         modulo.deslizador,
@@ -189,7 +189,7 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
       ancho = 150;
       modulo.etiqueta = Mila.Pantalla.nuevaEtiqueta({texto:'75 %',ancho});
       modulo.deslizador = Mila.Pantalla.nuevoDeslizador({ancho, valor:75});
-      return Mila.Pantalla.nuevoPanel({elementos:[
+      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
         Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("ldr.svg"),ancho}),
         modulo.etiqueta,
         modulo.deslizador,
@@ -200,9 +200,9 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
     case "MONITOR":
       modulo.areaTexto = Mila.Pantalla.nuevaAreaTexto({editable:false,tamanioLetra:10});
       modulo.autoscroll = Mila.Pantalla.nuevaCasillaVerificacion({marcada:true});
-      return Mila.Pantalla.nuevoPanel({elementos:[
+      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
         Mila.Pantalla.nuevoPanel({elementos:[
-          Mila.Pantalla.nuevaEtiqueta({texto:"Monitor serial",tamanioLetra:10,margenExterno:Mila.Geometria.rectanguloEn__De_x_(0,0,15,0)}),
+          Mila.Pantalla.nuevaEtiqueta({texto:"Monitor serial",tamanioLetra:10,margenExterno:Mila.Geometria.rectánguloEn__De_x_(0,0,15,0)}),
           modulo.autoscroll,
           Mila.Pantalla.nuevaEtiqueta({texto:"autoscroll",tamanioLetra:10}),
         ],disposicion:"Horizontal",alto:"Minimizar"}),
@@ -226,7 +226,7 @@ Simu.Diseño.CrearPanelParaMatrizLed = function(modulo) {
     let fila = [];
     for (let j=1; j<=8; j++) {
       let imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("ledMatrizApagada.svg"),
-        margenExterno:Mila.Geometria.rectanguloEn__De_x_(margenLed,0,margenLed,0),
+        margenExterno:Mila.Geometria.rectánguloEn__De_x_(margenLed,0,margenLed,0),
         ancho:anchoLed
       });
       modulo.imagen.push(imagen);
@@ -239,9 +239,9 @@ Simu.Diseño.CrearPanelParaMatrizLed = function(modulo) {
   }
   filas.push(Mila.Pantalla.nuevaEtiqueta({texto:
     `DIN: ${modulo.pines[0]}    CS: ${modulo.pines[1]}    CLK: ${modulo.pines[2]}`,ancho:anchoTotal,
-    tamanioLetra:10,margenExterno:Mila.Geometria.rectanguloEn__De_x_(0,10,0,-10)
+    tamanioLetra:10,margenExterno:Mila.Geometria.rectánguloEn__De_x_(0,10,0,-10)
   }));
-  modulo.panel = Mila.Pantalla.nuevoPanel({elementos:filas,ancho:"Minimizar",alto:"Minimizar",
+  modulo.panel = Mila.Pantalla.nuevoPanelArrastrable({elementos:filas,ancho:"Minimizar",alto:"Minimizar",
     grosorBorde:2,colorBorde:'#000',margenInterno:10,margenExterno:10
   });
 };
