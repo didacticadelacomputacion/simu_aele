@@ -16,10 +16,10 @@ Simu.ajustes = {
 Mila.alIniciar(function() {
   Mila.Pantalla.nuevoPanelArrastrable = function(atributosPanel) {
     const panel = Mila.Pantalla.nuevoPanel(atributosPanel);
-    // const arrastrable = Mila.Pantalla.nuevoElementoArrastrable({
-    //   elementoVisual:panel
-    // });
-    return panel;
+    const arrastrable = Mila.Pantalla.nuevoElementoArrastrable({
+      elementoVisual:panel
+    });
+    return arrastrable;
   };
   let códigoRecibido = Mila.Navegador.argumentoUrl('codigo');
   if (códigoRecibido.esNada()) {
