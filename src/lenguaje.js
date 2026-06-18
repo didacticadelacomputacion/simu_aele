@@ -150,6 +150,23 @@ Simu.Lenguaje.comandosPrimitivos = {
       Simu.Diseño.ApagarBuzzer(pin);
     }
   },
+  "PosicionarServo":{
+    p:P([tt("Posicionar"),tt("servo"),tt("en"),rec("EXPRESIÓN"),tt("a"),rec("EXPRESIÓN"),tt("grados")],function(tokens, textoOriginal) {
+      return Mila.AST.nuevoNodo({
+        tipoNodo: "PosicionarServo",
+        hijos: {pin:Simu.Lenguaje.comoPin(tokens[3]), angulo:tokens[5]},
+        textoOriginal
+      });
+    }),
+    aJs:function(nodo, hijos) {
+      let pin = hijos.pin;
+      let angulo = hijos.angulo;
+      return `PosicionarServo({pin:${pin},angulo:${angulo}});`;
+    },
+    exec:function(parametros) {
+      Simu.Diseño.PosicionarServo(parametros.pin, parametros.angulo);
+    }
+  },
   "DibujarMatrizLed":{
     p:P([tt("Dibujar"),rec("EXPRESIÓN"),tt("en"),tid],function(tokens, textoOriginal) {
       return Mila.AST.nuevoNodo({

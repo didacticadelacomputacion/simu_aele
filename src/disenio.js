@@ -1,7 +1,7 @@
 Mila.Módulo({
   define:"Simu.Diseño",
   necesita:["$milascript/base"],
-  usa:["$milascript/pantalla"]
+  usa:["$milascript/pantalla","$milascript/audio"]
 });
 
 Simu.Diseño.Inicializar = function(modo, placa, setupPlaca) {
@@ -12,6 +12,7 @@ Simu.Diseño.Inicializar = function(modo, placa, setupPlaca) {
     Simu.Diseño.componentes = setupPlaca.componentes;
   }
   Simu.Diseño.panel = Mila.Pantalla.nuevoPanel();
+  Mila.Audio.EstablecerVolumenEn_(20);
   return Simu.Diseño.panel;
 };
 
@@ -48,7 +49,9 @@ Simu.Diseño.componentes = {
   LED_8:{componente:"LED", pin:8, modo: ['D','OUT']},
   'LED_MATRIX_mi matriz led':{componente:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0']},
   LDR_5:{componente:"LDR", pin:5, modo: ['D','IN']},
-  ULTRASONIC_3_6:{componente:"ULTRASONIC", echo:3, trigger:6}
+  ULTRASONIC_3_6:{componente:"ULTRASONIC", echo:3, trigger:6},
+  BUZZER_9:{componente:"BUZZER", pin:9},
+  SERVO_10:{componente:"SERVO", pin:10}
 };
 
 Simu.Diseño.DibujarPines = function() {  
@@ -163,12 +166,22 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
         margenExterno:10,margenInterno:10,colorBorde:'#000'
       });
     case "BUZZER":
-      modulo.imagen = Mila.Pantalla.nuevaEtiqueta({texto:"Imagen de un buzzer apagado"});
+      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("buzzer.svg"),ancho:80});
       return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
         modulo.imagen,
         Mila.Pantalla.nuevaEtiqueta({texto:`. (pin ${modulo.pin})`,tamanioLetra:10})
       ],ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
         margenExterno:10,margenInterno:10,colorBorde:'#000'
+      });
+    case "SERVO":
+      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("pataServo.svg"),ancho:25, posiciónY:0, posiciónX:25});
+      return Mila.Pantalla.nuevoPanelArrastrable({
+        elementos:[
+          Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("servo.svg"),ancho:80}),
+          modulo.imagen
+        ],
+        ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
+        margenExterno:10,margenInterno:10,colorBorde:'#000',
       });
     case "LED_MATRIX":
       Simu.Diseño.CrearPanelParaMatrizLed(modulo);
@@ -384,9 +397,10 @@ Simu.Diseño.EncenderBuzzer = function(pin) {
     Simu.Diseño.AsignarValorPin(pin, "HIGH");
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `BUZZER_${pin}`;
-    if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
+    /*if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
       Simu.Diseño.componentes[claveModulo].imagen.CambiarTextoA_("Imagen de un buzzer encendido");
-    }
+    }*/
+    Mila.Audio.Reproducir(Mila.Audio.nota("Do"));
   }
   Mila.Pantalla._Redimensionar();
 };
@@ -396,11 +410,23 @@ Simu.Diseño.ApagarBuzzer = function(pin) {
     Simu.Diseño.AsignarValorPin(pin, "LOW");
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `BUZZER_${pin}`;
-    if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
+    /*if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
       Simu.Diseño.componentes[claveModulo].imagen.CambiarTextoA_("Imagen de un buzzer apagado");
-    }
+    }*/
+    Mila.Audio.Detener();
   }
   Mila.Pantalla._Redimensionar();
+};
+
+Simu.Diseño.PosicionarServo = function(pin, angulo) {
+  if (Simu.Diseño.modo == "PINES") {
+  } else if (Simu.Diseño.modo == "MODULOS") {
+    let claveModulo = `SERVO_${pin}`;
+    if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
+      Simu.Diseño.componentes[claveModulo].imagen.CambiarRotaciónA_(angulo);
+      //Simu.Diseño.componentes[claveModulo].imagen.CambiarPosiciónXA_(angulo);
+    }
+  }
 };
 
 Simu.Diseño.DibujarMatrizLed = function(dibujo, nombre) {
@@ -449,7 +475,10 @@ Simu.Diseño.ReiniciarValoresMódulos = function() {
         modulo.valor.CambiarTextoA_("-");
         break;
       case "BUZZER":
-        modulo.imagen.CambiarTextoA_("Imagen de un buzzer apagado");
+        Mila.Audio.Detener();
+        break;
+      case "SERVO":
+        modulo.imagen.CambiarRotaciónA_(0);
         break;
       case "LED_MATRIX":
         for (let i of modulo.imagen) {
