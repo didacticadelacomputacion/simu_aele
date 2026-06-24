@@ -15,7 +15,7 @@ Simu.ajustes = {
 
 Mila.alIniciar(function() {
   Mila.Pantalla.nuevoPanelArrastrable = function(atributosPanel) {
-    const panel = Mila.Pantalla.nuevoPanel(atributosPanel);
+    const panel = Mila.Pantalla.nuevoPanel(Object.assign(atributosPanel,{cssAdicional:{'user-select':'none'}}));
     const arrastrable = Mila.Pantalla.nuevoElementoArrastrable({
       elementoVisual:panel
     });
