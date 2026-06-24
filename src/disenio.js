@@ -174,10 +174,10 @@ Simu.Diseño.panelParaModulo_ = function(claveModulo) {
         margenExterno:10,margenInterno:10,colorBorde:'#000'
       });
     case "SERVO":
-      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("pataServo.svg"),ancho:25, posiciónY:0, posiciónX:25});
+      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("pataServo.svg"),ancho:25, posiciónY:7, posiciónX:23.4});
       return Mila.Pantalla.nuevoPanelArrastrable({
         elementos:[
-          Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("servo.svg"),ancho:80}),
+          Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("servo.svg"),ancho:80, posiciónY:31}),
           modulo.imagen
         ],
         ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
