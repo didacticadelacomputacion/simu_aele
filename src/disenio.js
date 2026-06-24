@@ -66,6 +66,14 @@ Simu.Diseño.DibujarPines = function() {
 };
 
 Simu.Diseño.DibujarModulos = function() {
+  // VERSIÓN todos los módulos uno abajo del otro.
+  // let módulos = [];
+  // for (let claveMódulo in Simu.Diseño.componentes) {
+  //   módulos.push(Simu.Diseño.panelParaModulo_(claveMódulo));
+  // }
+  // Simu.Diseño.panel.CambiarElementosA_(módulos);
+  // Simu.Diseño.AgregarListenersDeslizadores();
+  // VERSIÓN módulos alineados en filas de 2 (o de 'módulosPorLínea').
   let módulosPorLínea = 2;
   const líneas = [];
   let módulos = [];
