@@ -1,22 +1,34 @@
 Mila.Módulo({
   define:"Simu.Diseño",
   necesita:["$milascript/base"],
-  usa:["$milascript/pantalla","$milascript/audio"]
+  usa:["$milascript/pantalla/todo","$milascript/audio","$milascript/geometria","componentes"]
 });
 
 Simu.Diseño.Inicializar = function(modo, placa, setupPlaca) {
+  Mila.Contrato({
+    Propósito: "Inicializar el módulo de diseño de simu-aele.",
+    Parámetros: [
+      [modo, Mila.Tipo.Texto], // Alguno de los modos válidos (PINES, MODULOS, ...)
+      [placa, Mila.Tipo.Texto], // Alguna de las placas válidos (UNO, MEGA, NANO, ...)
+      [setupPlaca] // Información de pines y módulos que llegan como argumento url.
+        // Si es Mila.Nada, se usa la configuración por defecto (Simu.Diseño.pinesIO y Simu.Diseño.componentes).
+    ]
+  });
   Simu.Diseño.modo = modo;
   Simu.Diseño.placaActual = Simu.Diseño.placas[placa];
   if (setupPlaca.esAlgo()) {
     Simu.Diseño.pinesIO = setupPlaca.pinesIO;
     Simu.Diseño.componentes = setupPlaca.componentes;
   }
-  Simu.Diseño.panel = Mila.Pantalla.nuevoPanel();
+  Simu.Diseño.panel = Mila.Pantalla.nuevoPanel({grosorBorde:1, colorBorde:"#888"});
   Mila.Audio.EstablecerVolumenEn_(20);
   return Simu.Diseño.panel;
 };
 
 Simu.Diseño.Actualizar = function() {
+  Mila.Contrato({
+    Propósito: "Actualizar el módulo de diseño de simu-aele."
+  });
   if (Simu.Diseño.modo == "PINES") {
     Simu.Diseño.DibujarPines();
   } else {
@@ -26,6 +38,9 @@ Simu.Diseño.Actualizar = function() {
 };
 
 Simu.Diseño.Reiniciar = function() {
+  Mila.Contrato({
+    Propósito: "Reiniciar el módulo de diseño de simu-aele."
+  });
   if (Simu.Diseño.modo == "PINES") {
     Simu.Diseño.ReiniciarValoresPines();
   } else {
@@ -35,26 +50,72 @@ Simu.Diseño.Reiniciar = function() {
 };
 
 Simu.Diseño.pinesIO = {
-  // 8:{modo:"ENTRADA", rango:"BINARIO"},
-  // 9:{modo:"SALIDA", rango:"A256", valor:"-"},
-  // 10:{modo:"SALIDA", rango:"BINARIO", valor:"-"},
-  // 11:{modo:"ENTRADA", rango:"BINARIO"},
-  // 12:{modo:"SALIDA", rango:"BINARIO", valor:"-"},
-  // A1:{modo:"SALIDA", rango:"BINARIO", valor:"-"},
-  // A3:{modo:"ENTRADA", rango:"BINARIO"},
-  // A4:{modo:"ENTRADA", rango:"A1024"}
+  // TODO: En lugar de estar harcodeado, que se genere a partir del input del usuario.
+  8:{modo:"ENTRADA", rango:"BINARIO"},
+  9:{modo:"SALIDA", rango:"A256", valor:"-"},
+  10:{modo:"SALIDA", rango:"BINARIO", valor:"-"},
+  11:{modo:"ENTRADA", rango:"BINARIO"},
+  12:{modo:"SALIDA", rango:"BINARIO", valor:"-"},
+  A1:{modo:"SALIDA", rango:"BINARIO", valor:"-"},
+  A3:{modo:"ENTRADA", rango:"BINARIO"},
+  A4:{modo:"ENTRADA", rango:"A1024"}
 };
 
 Simu.Diseño.componentes = {
-  LED_8:{componente:"LED", pin:8, modo: ['D','OUT']},
-  'LED_MATRIX_mi matriz led':{componente:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0']},
-  LDR_5:{componente:"LDR", pin:5, modo: ['D','IN']},
-  ULTRASONIC_3_6:{componente:"ULTRASONIC", echo:3, trigger:6},
-  BUZZER_9:{componente:"BUZZER", pin:9},
-  SERVO_10:{componente:"SERVO", pin:10}
+  // TODO: En lugar de estar harcodeado, que se genere a partir del input del usuario.
+  UnoR3:{
+    clase:"BOARD", modelo:"UNO_R3",
+    ubicación:Mila.Geometria.puntoEn__(0,800)
+  },
+  LED_8:{
+    clase:"LED", pin:8, modo: ['D','OUT'],
+    ubicación:Mila.Geometria.puntoEn__(0,0)
+  },
+  'LED_MATRIX_mi matriz led':{
+    clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
+    ubicación:Mila.Geometria.puntoEn__(0,400)
+  },
+  LDR_5:{
+    clase:"LDR", pin:5, modo: ['D','IN'],
+    ubicación:Mila.Geometria.puntoEn__(300,0)
+  },
+  ULTRASONIC_3_6:{
+    clase:"ULTRASONIC", echo:3, trigger:6,
+    ubicación:Mila.Geometria.puntoEn__(300,400)
+  },
+  BUZZER_9:{
+    clase:"BUZZER", pin:9,
+    ubicación:Mila.Geometria.puntoEn__(600,0)
+  },
+  SERVO_10:{
+    clase:"SERVO", pin:10,
+    ubicación:Mila.Geometria.puntoEn__(600,400)
+  }
 };
 
-Simu.Diseño.DibujarPines = function() {  
+Simu.Diseño.MoverCámara__ = function(x, y) {
+  Mila.Contrato({
+    Propósito: "Mover la cámara del escenario tanto como indiquen los desplazamientos dados en cada eje",
+    Parámetros: [
+      [x, Mila.Tipo.Entero],
+      [y, Mila.Tipo.Entero]
+    ],
+    Precondiciones: [
+      "El modo de visualización es Módulos",
+      Simu.ajustes.modoVer == "MODULOS"
+    ]
+  });
+  Simu.Diseño.escenario.MoverCámara__(x, y);
+};
+
+Simu.Diseño.DibujarPines = function() {
+  Mila.Contrato({
+    Propósito: "Dibujar el estado de los pines en el panel de diseño.",
+    Precondiciones: [
+      "El modo actual del simulador es Pines",
+      Simu.Diseño.modo == "PINES"
+    ]
+  });
   const pines = [];
   for (let pin in Simu.mostrarPinesDesconectados.marcada()
     ? Simu.Diseño.placaActual.pines
@@ -66,27 +127,28 @@ Simu.Diseño.DibujarPines = function() {
 };
 
 Simu.Diseño.DibujarModulos = function() {
-  // VERSIÓN todos los módulos uno abajo del otro.
-  // let módulos = [];
-  // for (let claveMódulo in Simu.Diseño.componentes) {
-  //   módulos.push(Simu.Diseño.panelParaModulo_(claveMódulo));
-  // }
-  // Simu.Diseño.panel.CambiarElementosA_(módulos);
-  // Simu.Diseño.AgregarListenersDeslizadores();
-  // VERSIÓN módulos alineados en filas de 2 (o de 'módulosPorLínea').
-  let módulosPorLínea = 2;
-  const líneas = [];
-  let módulos = [];
-  for (let claveMódulo in Simu.Diseño.componentes) {
-    if (módulos.length == módulosPorLínea) {
-      líneas.push(Mila.Pantalla.nuevoPanel({disposicion:"Horizontal",alto:"Minimizar",elementos:módulos}));
-      módulos = [];
-    }
-    módulos.push(Simu.Diseño.panelParaModulo_(claveMódulo));
-  }
-  líneas.push(Mila.Pantalla.nuevoPanel({disposicion:"Horizontal",alto:"Minimizar",elementos:módulos}));
-  Simu.Diseño.panel.CambiarElementosA_(líneas);
-  Simu.Diseño.AgregarListenersDeslizadores();
+  Mila.Contrato({
+    Propósito: "Dibujar el estado de los componentes en el panel de diseño.",
+    Precondiciones: [
+      "El modo actual del simulador es MODULOS",
+      Simu.Diseño.modo == "MODULOS"
+    ]
+  });
+  const contenido = [];
+  Simu.Diseño.componentes.valoresContenidos().conCadaUno(componente => {
+    componente.componente = Simu.Componentes.nuevo(componente);
+    contenido.push({
+      x:() => componente.componente.ubicación().x,
+      y:() => componente.componente.ubicación().y,
+      imagen: () => {
+        return {clase:'svg', svg:componente.componente.svg()};
+      }
+    });
+  });
+  const escena = Mila.Escena.nueva({contenido});
+  const cámara = Mila.Cámara.nueva({zoom:25});
+  Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena});
+  Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
 };
 
 Simu.Diseño.AgregarListenersDeslizadores = function() {
@@ -100,7 +162,7 @@ Simu.Diseño.AgregarListenersDeslizadores = function() {
         let unidad = {
           'LDR':'%',
           'ULTRASONIC':' cm'
-        }[Simu.Diseño.componentes[claveModulo].componente];
+        }[Simu.Diseño.componentes[claveModulo].clase];
         if ('etiqueta' in Simu.Diseño.componentes[claveModulo]) {
           Simu.Diseño.componentes[claveModulo].etiqueta.CambiarTextoA_(`${valor}${unidad}`);
         }
@@ -110,6 +172,15 @@ Simu.Diseño.AgregarListenersDeslizadores = function() {
 };
 
 Simu.Diseño.panelParaPin_ = function(pin) {
+  Mila.Contrato({
+    Propósito: [
+      "Describe un nuevo panel para mostrar en el panel de diseño que refleje el estado del pin dado.",
+      Mila.Tipo.Panel
+    ],
+    Parámetros: [
+      [pin, Mila.Tipo.Texto]
+    ]
+  });
   const estáConectado = pin in Simu.Diseño.pinesIO;
   const botonConexion = Mila.Pantalla.nuevoBoton({texto:estáConectado ? "Desconectar" : "Conectar"});
   const panelIzquierdo = Mila.Pantalla.nuevoPanel({alto:"Minimizar",disposicion:"Horizontal"});
@@ -144,131 +215,15 @@ Simu.Diseño.panelParaPin_ = function(pin) {
   return Mila.Pantalla.nuevoPanel({elementos:[panelIzquierdo,panelMedio,panelDerecho],alto:"Minimizar",disposicion:"Horizontal"});
 };
 
-Simu.Diseño.panelParaModulo_ = function(claveModulo) {
-  let ancho;
-  const modulo = Simu.Diseño.componentes[claveModulo];
-  switch (modulo.componente) {
-    case "PIN":
-      modulo.imagen = Mila.Pantalla.nuevaEtiqueta({texto:"-"});
-      return Mila.Pantalla.nuevoPanel({elementos:[
-        Mila.Pantalla.nuevaEtiqueta({texto:`pin ${modulo.pin} (${
-          modulo.modo[1] == 'IN' ? "entrada" : "salida"
-        } ${
-          modulo.modo[0] == 'D' ? "digital" : "analógica"
-        }) : `}),
-        modulo.imagen
-      ],ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
-        margenExterno:10,margenInterno:10,colorBorde:'#000'
-      });
-    case "LED":
-      ancho = 80;
-      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("ledApagada.svg"),ancho});
-      modulo.valor = Mila.Pantalla.nuevaEtiqueta({texto:"-",tamanioLetra:10,ancho:"Maximizar"})
-      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
-        modulo.imagen,
-        Mila.Pantalla.nuevoPanel({elementos:[
-          Mila.Pantalla.nuevaEtiqueta({texto:`pin ${modulo.pin} : `,tamanioLetra:10,ancho:"Maximizar"}),
-          modulo.valor
-        ],disposicion:"Horizontal",alto:"Minimizar",ancho})
-      ],ancho:"Minimizar",alto:"Minimizar",
-        margenExterno:10,margenInterno:10,colorBorde:'#000'
-      });
-    case "BUZZER":
-      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("buzzer.svg"),ancho:80});
-      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
-        modulo.imagen,
-        Mila.Pantalla.nuevaEtiqueta({texto:`. (pin ${modulo.pin})`,tamanioLetra:10})
-      ],ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
-        margenExterno:10,margenInterno:10,colorBorde:'#000'
-      });
-    case "SERVO":
-      modulo.imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("pataServo.svg"),ancho:25, posiciónY:7, posiciónX:23.4});
-      return Mila.Pantalla.nuevoPanelArrastrable({
-        elementos:[
-          Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("servo.svg"),ancho:80, posiciónY:31}),
-          modulo.imagen
-        ],
-        ancho:"Minimizar",alto:"Minimizar",disposicion:"Horizontal",
-        margenExterno:10,margenInterno:10,colorBorde:'#000',
-      });
-    case "LED_MATRIX":
-      Simu.Diseño.CrearPanelParaMatrizLed(modulo);
-      return modulo.panel;
-    case "ULTRASONIC":
-      ancho = 180;
-      modulo.etiqueta = Mila.Pantalla.nuevaEtiqueta({texto:'80 cm',ancho});
-      modulo.deslizador = Mila.Pantalla.nuevoDeslizador({ancho, valor:80});
-      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
-        Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("sonar.svg"),ancho}),
-        modulo.etiqueta,
-        modulo.deslizador,
-        Mila.Pantalla.nuevaEtiqueta({texto:`ECHO: ${modulo.echo}    TRIGGER: ${modulo.trigger}`,ancho,tamanioLetra:10})
-      ],ancho:"Minimizar",alto:"Minimizar",
-        margenExterno:10,margenInterno:10,colorBorde:'#000'
-      });
-    case "LDR":
-      ancho = 150;
-      modulo.etiqueta = Mila.Pantalla.nuevaEtiqueta({texto:'75 %',ancho});
-      modulo.deslizador = Mila.Pantalla.nuevoDeslizador({ancho, valor:75});
-      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
-        Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("ldr.svg"),ancho}),
-        modulo.etiqueta,
-        modulo.deslizador,
-        Mila.Pantalla.nuevaEtiqueta({texto:`pin ${modulo.pin}`,ancho,tamanioLetra:10})
-      ],ancho:"Minimizar",alto:"Minimizar",
-        margenExterno:10,margenInterno:10,colorBorde:'#000'
-      });
-    case "MONITOR":
-      modulo.areaTexto = Mila.Pantalla.nuevaAreaTexto({editable:false,tamanioLetra:10});
-      modulo.autoscroll = Mila.Pantalla.nuevaCasillaVerificacion({marcada:true});
-      return Mila.Pantalla.nuevoPanelArrastrable({elementos:[
-        Mila.Pantalla.nuevoPanel({elementos:[
-          Mila.Pantalla.nuevaEtiqueta({texto:"Monitor serial",tamanioLetra:10,margenExterno:Mila.Geometria.rectánguloEn__De_x_(0,0,15,0)}),
-          modulo.autoscroll,
-          Mila.Pantalla.nuevaEtiqueta({texto:"autoscroll",tamanioLetra:10}),
-        ],disposicion:"Horizontal",alto:"Minimizar"}),
-        modulo.areaTexto
-      ],//ancho:"Minimizar",alto:"Minimizar",
-        margenExterno:10,margenInterno:10,colorBorde:'#000'
-      });
-    default:
-      return Mila.Pantalla.nuevoPanel();
-  }
-};
-
-Simu.Diseño.CrearPanelParaMatrizLed = function(modulo) {
-  let anchoLed = 15;
-  let margenLed = 2;
-  let anchoTotal = (anchoLed + 2*margenLed)*8;
-  modulo.imagen = [];
-  let filas = [];
-  filas.push(Mila.Pantalla.nuevaEtiqueta({texto:modulo.nombre,ancho:anchoTotal}));
-  for (let i=1; i<=8; i++) {
-    let fila = [];
-    for (let j=1; j<=8; j++) {
-      let imagen = Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("ledMatrizApagada.svg"),
-        margenExterno:Mila.Geometria.rectánguloEn__De_x_(margenLed,0,margenLed,0),
-        ancho:anchoLed
-      });
-      modulo.imagen.push(imagen);
-      fila.push(imagen);
-    }
-    filas.push(Mila.Pantalla.nuevoPanel({elementos:fila,
-      disposicion:"Horizontal",ancho:"Minimizar",alto:"Minimizar",
-      colorFondo:"#000"
-    }));
-  }
-  filas.push(Mila.Pantalla.nuevaEtiqueta({texto:
-    `DIN: ${modulo.pines[0]}    CS: ${modulo.pines[1]}    CLK: ${modulo.pines[2]}`,ancho:anchoTotal,
-    tamanioLetra:10,margenExterno:Mila.Geometria.rectánguloEn__De_x_(0,10,0,-10)
-  }));
-  modulo.panel = Mila.Pantalla.nuevoPanelArrastrable({elementos:filas,ancho:"Minimizar",alto:"Minimizar",
-    grosorBorde:2,colorBorde:'#000',margenInterno:10,margenExterno:10
-  });
-};
-
 Simu.Diseño.Escribir = function(pin, valor) {
-  if (Number.isInteger(valor)) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que se escribió el valor dado en el pin dado.",
+    Parámetros: [
+      [pin, Mila.Tipo.Texto],
+      [valor, Mila.Tipo.O([Mila.Tipo.Numero, Mila.Tipo.Texto])]
+    ]
+  });
+  if (valor.esUnNumero()) {
     if (valor < 0) {
       Simu.Diseño.BOOM("No se puede escribir un valor negativo en un pin pwm.");
       return;
@@ -279,55 +234,92 @@ Simu.Diseño.Escribir = function(pin, valor) {
   }
   if (Simu.Diseño.modo == "PINES") {
     Simu.Diseño.AsignarValorPin(pin, valor);
+    Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `PIN_${pin}`;
-    if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
-      Simu.Diseño.componentes[claveModulo].imagen.CambiarTextoA_(valor);
+    if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
+      // TODO
+      // Simu.Diseño.componentes[claveModulo].componente.AsignarValor_(valor);
     }
   }
-  Mila.Pantalla._Redimensionar();
 };
 
 Simu.Diseño.lecturaDigital = function(pin) {
-
+  // TODO
 };
 
 Simu.Diseño.lecturaAnalogica = function(pin) {
-
+  // TODO
 };
 
 Simu.Diseño.distancia = function(echo, trigger) {
+  Mila.Contrato({
+    Propósito:[
+      "Describir la distancia medida por el sonar del panel de diseño conectado a los pines dados.",
+      Mila.Tipo.Numero
+    ],
+    Parámetros: [
+      [echo, Mila.Tipo.Texto],
+      [trigger, Mila.Tipo.Texto]
+    ]
+  });
   let claveModulo = `ULTRASONIC_${echo}_${trigger}`;
-  if (claveModulo in Simu.Diseño.componentes && 'deslizador' in Simu.Diseño.componentes[claveModulo]) {
-    let valor = Simu.Diseño.componentes[claveModulo].deslizador.valor();
-    return valor;
+  if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
+    // TODO
+    // return Simu.Diseño.componentes[claveModulo].componente.distancia();
   }
   return 0;
 };
 
 Simu.Diseño.estáOscuro = function(pin) {
+  Mila.Contrato({
+    Propósito:[
+      "Indicar si el nivel de luz medido por el ldr del panel de diseño conectado al pin dado es suficientemente alto como para considerar que está oscuro.",
+      Mila.Tipo.Booleano
+    ],
+    Parámetros: [
+      [pin, Mila.Tipo.Texto]
+    ]
+  });
   let claveModulo = `LDR_${pin}`;
-  if (claveModulo in Simu.Diseño.componentes && 'deslizador' in Simu.Diseño.componentes[claveModulo]) {
-    let valor = Simu.Diseño.componentes[claveModulo].deslizador.valor();
-    return valor < 50;
+  if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
+    // TODO
+    // let valor = Simu.Diseño.componentes[claveModulo].componente.nivelDeLuz();
+    // return valor > 500; // ¿De dónde sacar este valor? ¿Ponerle un tornillo al módulo con el que se pueda interactuar?
   }
   return false;
 };
 
 Simu.Diseño.luminosidad = function(pin, intensidad) {
+  Mila.Contrato({
+    Propósito:[
+      "Describe el nivel de luz medido por el ldr del panel de diseño conectado al pin dado.",
+      Mila.Tipo.Numero
+    ],
+    Parámetros: [
+      [pin, Mila.Tipo.Texto],
+      [intensidad, Mila.Tipo.Texto] // PORCENTAJE o RAW
+    ]
+  });
   let claveModulo = `LDR_${pin}`;
-  if (claveModulo in Simu.Diseño.componentes && 'deslizador' in Simu.Diseño.componentes[claveModulo]) {
-    let valor = Simu.Diseño.componentes[claveModulo].deslizador.valor();
-    if (intensidad == 'PORCENTAJE') {
-      return valor;
-    }
-    // RAW
-    return Math.round((100 - valor)*10.24);
+  if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
+    // TODO
+    // let valor = Simu.Diseño.componentes[claveModulo].componente.nivelDeLuz();
+    // if (intensidad == 'PORCENTAJE') {
+    //   return valor;
+    // } // RAW
+    // return Math.round((100 - valor)*10.24);
   }
   return 0;
 };
 
 Simu.Diseño.Esperar = function(cantidadMilisegundos) {
+  Mila.Contrato({
+    Propósito:"Simula una espera en la ejecución con la cantidad de milisegundos dada.",
+    Parámetros: [
+      [cantidadMilisegundos, Mila.Tipo.Numero]
+    ]
+  });
   if (cantidadMilisegundos < 0) {
     Simu.Diseño.BOOM("No se puede esperar una cantidad negativa de tiempo.");
   } else {
@@ -336,35 +328,58 @@ Simu.Diseño.Esperar = function(cantidadMilisegundos) {
 };
 
 Simu.Diseño.Decir = function(mensaje) {
-  if (Simu.Diseño.modo == "MODULOS") {
-    let claveModulo = "MONITOR";
-    if (claveModulo in Simu.Diseño.componentes && 'areaTexto' in Simu.Diseño.componentes[claveModulo]) {
-      Simu.Diseño.componentes[claveModulo].areaTexto.CambiarTextoA_(
-        Simu.Diseño.componentes[claveModulo].areaTexto.texto() + "\n" + mensaje
-      );
-      if ('autoscroll' in Simu.Diseño.componentes[claveModulo] && Simu.Diseño.componentes[claveModulo].autoscroll.marcada()) {
-        const nodoHtml = Simu.Diseño.componentes[claveModulo].areaTexto._nodoHtml;
-        nodoHtml.scrollTo(nodoHtml.scrollLeft, nodoHtml.scrollHeight);
-      }
-    }
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que se escribió texto en el monitor serial.",
+    Parámetros: [
+      [mensaje, Mila.Tipo.Texto]
+    ]
+  });
+  if (Simu.Diseño.modo == "MODULOS") { // TODO: Pensar cómo manejar esto. Suena cómodo que este sí sea un área de texto en lugar de un svg.
+    // let claveModulo = "MONITOR";
+    // if (claveModulo in Simu.Diseño.componentes && 'areaTexto' in Simu.Diseño.componentes[claveModulo]) {
+    //   Simu.Diseño.componentes[claveModulo].areaTexto.CambiarTextoA_(
+    //     Simu.Diseño.componentes[claveModulo].areaTexto.texto() + "\n" + mensaje
+    //   );
+    //   if ('autoscroll' in Simu.Diseño.componentes[claveModulo] && Simu.Diseño.componentes[claveModulo].autoscroll.marcada()) {
+    //     const nodoHtml = Simu.Diseño.componentes[claveModulo].areaTexto._nodoHtml;
+    //     nodoHtml.scrollTo(nodoHtml.scrollLeft, nodoHtml.scrollHeight);
+    //   }
+    // }
   }
 };
 
 Simu.Diseño.FinalizarEjecución = function() {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que se finalizó la ejecución."
+  });
   Simu.Finalizar();
 };
 
-Simu.Diseño.BOOM = function(msg) {
+Simu.Diseño.BOOM = function(mensaje) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que se produjo un error en la ejecución.",
+    Parámetros: [
+      [mensaje, Mila.Tipo.Texto]
+    ]
+  });
   let boom = Simu.Parser.Boom();
   if (boom.esAlgo()) {
     Simu.Boom(boom);
   } else {
-    Simu.PantallaBoom(msg);
+    Simu.PantallaBoom(mensaje);
     Simu.Finalizar();
   }
 };
 
 Simu.Diseño.SetLed = function(pin, valor, intensidad) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que un led conectado al pin dado se encendió con el valor dado y la intensidad dada.",
+    Parámetros: [
+      [pin, Mila.Tipo.Texto],
+      [valor, Mila.Tipo.O[Mila.Tipo.Texto, Mila.Tipo.Numero]],
+      [intensidad, Mila.Tipo.Texto] // BINARIA, PORCENTAJE o RAW
+    ]
+  });
   if (intensidad == "PORCENTAJE") {
     if (valor < 0) {
       Simu.Diseño.BOOM("No se puede asignar un valor negativo como porcentaje de intensidad de un led.");
@@ -386,74 +401,102 @@ Simu.Diseño.SetLed = function(pin, valor, intensidad) {
     Simu.Diseño.AsignarValorPin(pin,
       (intensidad == "PORCENTAJE" ? Math.round(valor*2.55) : valor)
     );
+    Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `LED_${pin}`;
-    if (claveModulo in Simu.Diseño.componentes) {
-      if ('imagen' in Simu.Diseño.componentes[claveModulo]) {
-        Simu.Diseño.componentes[claveModulo].imagen.CambiarRutaA_(Simu.rutaImagen(`led${valor == "LOW" ? "Apagada" : "Prendida"}.svg`));
-      }
-      if ('valor' in Simu.Diseño.componentes[claveModulo]) {
-        Simu.Diseño.componentes[claveModulo].valor.CambiarTextoA_(valor + (intensidad == "PORCENTAJE" ? "%" : ""));
-      }
+    if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
+      // TODO
+      // Simu.Diseño.componentes[claveModulo].componente.EstablecerValorEn_(...);
     }
   }
-  Mila.Pantalla._Redimensionar();
 };
 
 Simu.Diseño.EncenderBuzzer = function(pin) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que un buzzer conectado al pin dado se encendió.",
+    Parámetros: [
+      [pin, Mila.Tipo.Texto]
+    ]
+  });
   if (Simu.Diseño.modo == "PINES") {
     Simu.Diseño.AsignarValorPin(pin, "HIGH");
+    Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `BUZZER_${pin}`;
-    /*if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
-      Simu.Diseño.componentes[claveModulo].imagen.CambiarTextoA_("Imagen de un buzzer encendido");
-    }*/
     Mila.Audio.Reproducir(Mila.Audio.nota("Do"));
   }
-  Mila.Pantalla._Redimensionar();
 };
 
 Simu.Diseño.ApagarBuzzer = function(pin) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que un buzzer conectado al pin dado se apagó.",
+    Parámetros: [
+      [pin, Mila.Tipo.Texto]
+    ]
+  });
   if (Simu.Diseño.modo == "PINES") {
     Simu.Diseño.AsignarValorPin(pin, "LOW");
+    Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `BUZZER_${pin}`;
-    /*if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
-      Simu.Diseño.componentes[claveModulo].imagen.CambiarTextoA_("Imagen de un buzzer apagado");
-    }*/
     Mila.Audio.Detener();
   }
-  Mila.Pantalla._Redimensionar();
 };
 
-Simu.Diseño.PosicionarServo = function(pin, angulo) {
+Simu.Diseño.PosicionarServo = function(pin, ángulo) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que un servo conectado al pin dado se posicionó en el ángulo dado.",
+    Parámetros: [
+      [pin, Mila.Tipo.Texto],
+      [ángulo, Mila.Tipo.Numero]
+    ]
+  });
   if (Simu.Diseño.modo == "PINES") {
+    //
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `SERVO_${pin}`;
-    if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
-      Simu.Diseño.componentes[claveModulo].imagen.CambiarRotaciónA_(angulo);
-      //Simu.Diseño.componentes[claveModulo].imagen.CambiarPosiciónXA_(angulo);
+    if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
+      // TODO
+      // Simu.Diseño.componentes[claveModulo].componente.CambiarRotaciónA_(angulo);
     }
   }
 };
 
 Simu.Diseño.DibujarMatrizLed = function(dibujo, nombre) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que se dibujó el dibujo dado en una matriz de leds con el nombre dado.",
+    Parámetros: [
+      [dibujo, Mila.Tipo.ListaDe_(Mila.Tipo.Texto)],
+      [nombre, Mila.Tipo.Texto]
+    ]
+  });
   if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `LED_MATRIX_${nombre}`;
-    if (claveModulo in Simu.Diseño.componentes && 'imagen' in Simu.Diseño.componentes[claveModulo]) {
+    if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
       for (let i=0; i<64; i++) {
-        if (dibujo.length > i && Simu.Diseño.componentes[claveModulo].imagen.length > i) {
-          Simu.Diseño.componentes[claveModulo].imagen[i].CambiarRutaA_(
-            Simu.rutaImagen(dibujo[i] == "O" ? "ledMatrizPrendida.svg" : "ledMatrizApagada.svg")
-          );
+        if (dibujo.length > i && Simu.Diseño.componentes[claveModulo].componente.length > i) {
+          // TODO
+          // Simu.Diseño.componentes[claveModulo].componente.EstablecerLed_En_(i,
+          //   dibujo[i] == "O" ? "ON" : "OFF"
+          // );
         }
       }
     }
   }
-  Mila.Pantalla._Redimensionar();
 };
 
 Simu.Diseño.AsignarValorPin = function(pin, valor) {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño para reflejar que se asignó el valor dado en el pin dado.",
+    Parámetros: [
+      [pin, Mila.Tipo.Texto],
+      [valor, Mila.Tipo.O([Mila.Tipo.Texto, Mila.Tipo.Numero])]
+    ],
+    Precondiciones: [
+      "El modo de visualización es Pines",
+      Simu.ajustes.modoVer == "PINES"
+    ]
+  });
   if (pin in Simu.Diseño.pinesIO && 'etiqueta' in Simu.Diseño.pinesIO[pin]) {
     Simu.Diseño.pinesIO[pin].valor = valor;
     Simu.Diseño.pinesIO[pin].etiqueta.CambiarTextoA_(valor);
@@ -461,6 +504,13 @@ Simu.Diseño.AsignarValorPin = function(pin, valor) {
 };
 
 Simu.Diseño.ReiniciarValoresPines = function() {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño reiniciando los valores de todos los pines.",
+    Precondiciones: [
+      "El modo de visualización es Pines",
+      Simu.ajustes.modoVer == "PINES"
+    ]
+  });
   for (let pin in Simu.Diseño.pinesIO) {
     Simu.Diseño.pinesIO[pin].valor = "-";
     if ('etiqueta' in Simu.Diseño.pinesIO[pin]) {
@@ -470,32 +520,18 @@ Simu.Diseño.ReiniciarValoresPines = function() {
 };
 
 Simu.Diseño.ReiniciarValoresMódulos = function() {
+  Mila.Contrato({
+    Propósito:"Actualizar el panel de diseño reiniciando los valores de todos los componentes.",
+    Precondiciones: [
+      "El modo de visualización es Módulos",
+      Simu.ajustes.modoVer == "MODULOS"
+    ]
+  });
   for (let claveModulo in Simu.Diseño.componentes) {
     const modulo = Simu.Diseño.componentes[claveModulo];
-    switch (modulo.componente) {
-      case "PIN":
-        if (modulo.modo[1] == 'OUT') {
-          modulo.imagen.CambiarTextoA_('-');
-        }
-        break;
-      case "LED":
-        modulo.imagen.CambiarRutaA_(Simu.rutaImagen("ledApagada.svg"));
-        modulo.valor.CambiarTextoA_("-");
-        break;
-      case "BUZZER":
-        Mila.Audio.Detener();
-        break;
-      case "SERVO":
-        modulo.imagen.CambiarRotaciónA_(0);
-        break;
-      case "LED_MATRIX":
-        for (let i of modulo.imagen) {
-          i.CambiarRutaA_(Simu.rutaImagen("ledMatrizApagada.svg"));
-        }
-        break;
-      case "MONITOR":
-        modulo.areaTexto.CambiarTextoA_("");
-        break;
+    if (modulo.defineLaClave_('componente') && modulo.componente.sabeResponder_('Reiniciar')) {
+      // TODO
+      // modulo.componente.Reiniciar();
     }
   }
 };

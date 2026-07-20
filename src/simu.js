@@ -87,12 +87,31 @@ Simu.IniciarConCódigo = function(código) {
   }
 
   // Crear UI
-  Simu.areaTexto = Mila.Pantalla.nuevaAreaTexto({texto:código, editable:(Simu.ajustes.modoCódigo == "EDITAR")});
+  Simu.areaTexto = Mila.Pantalla.nuevaAreaTexto({
+    texto:código, colorBorde: "#aaa",
+    editable:(Simu.ajustes.modoCódigo == "EDITAR")
+  });
   let elementosEscritorio = [];
   if (["VER","EDITAR"].includes(Simu.ajustes.modoCódigo)) {
     elementosEscritorio.push(Mila.Pantalla.nuevoPanel({elementos:[Simu.areaTexto],ancho:300}));
   }
   Simu.panelDiseño = Simu.Diseño.Inicializar(Simu.ajustes.modoVer, Simu.ajustes.placa, setupPlaca);
+  if (Simu.ajustes.modoVer == "MODULOS") {
+    const panelDeControl = Mila.Pantalla.nuevoPanel({
+      disposicion:"Horizontal", alto:"Minimizar",
+      elementos:[
+        Mila.Pantalla.nuevaEtiqueta({texto:"Mover la cámara: "}),
+        Mila.Pantalla.nuevoBoton({texto:"<-",funcion:() => Simu.Diseño.MoverCámara__(-10,0)}),
+        Mila.Pantalla.nuevoBoton({texto:"^",funcion:() => Simu.Diseño.MoverCámara__(0,-10)}),
+        Mila.Pantalla.nuevoBoton({texto:"v",funcion:() => Simu.Diseño.MoverCámara__(0,10)}),
+        Mila.Pantalla.nuevoBoton({texto:"->",funcion:() => Simu.Diseño.MoverCámara__(10,0)})
+      ]
+    });
+    Simu.panelDiseño = Mila.Pantalla.nuevoPanel({
+      disposicion:"Vertical",
+      elementos:[panelDeControl, Simu.panelDiseño]
+    })
+  }
   elementosEscritorio.push(Simu.panelDiseño);
   Simu.escritorio = Mila.Pantalla.nuevoPanel({elementos:elementosEscritorio, disposicion: "Horizontal"});
 
