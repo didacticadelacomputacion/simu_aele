@@ -65,15 +65,15 @@ Simu.Diseño.componentes = {
   // TODO: En lugar de estar harcodeado, que se genere a partir del input del usuario.
   UnoR3:{
     clase:"BOARD", modelo:"UNO_R3",
-    ubicación:Mila.Geometria.puntoEn__(0,800)
+    ubicación:Mila.Geometria.puntoEn__(0,200)
   },
   LED_8:{
-    clase:"LED", pin:8, modo: ['D','OUT'],
+    clase:"LED", pin:8, modo: ['D','OUT'], // color:"#f00",
     ubicación:Mila.Geometria.puntoEn__(0,0)
   },
   'LED_MATRIX_mi matriz led':{
     clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
-    ubicación:Mila.Geometria.puntoEn__(0,400)
+    ubicación:Mila.Geometria.puntoEn__(0,800)
   },
   LDR_5:{
     clase:"LDR", pin:5, modo: ['D','IN'],
@@ -81,7 +81,7 @@ Simu.Diseño.componentes = {
   },
   ULTRASONIC_3_6:{
     clase:"ULTRASONIC", echo:3, trigger:6,
-    ubicación:Mila.Geometria.puntoEn__(300,400)
+    ubicación:Mila.Geometria.puntoEn__(800,400)
   },
   BUZZER_9:{
     clase:"BUZZER", pin:9,
@@ -89,7 +89,7 @@ Simu.Diseño.componentes = {
   },
   SERVO_10:{
     clase:"SERVO", pin:10,
-    ubicación:Mila.Geometria.puntoEn__(600,400)
+    ubicación:Mila.Geometria.puntoEn__(600,800)
   }
 };
 
@@ -150,17 +150,74 @@ Simu.Diseño.DibujarMódulos = function() {
   const contenido = [];
   Simu.Diseño.componentes.valoresContenidos().conCadaUno(componente => {
     contenido.push({
-      x:() => componente.componente.ubicación().x,
-      y:() => componente.componente.ubicación().y,
-      imagen: () => {
-        return {clase:'svg', svg:componente.componente.svg()};
-      }
+      posiciónEnX:() => componente.componente.ubicación().x,
+      posiciónEnY:() => componente.componente.ubicación().y,
+      dibujo: () => componente.componente.dibujo()
     });
   });
   const escena = Mila.Escena.nueva({contenido});
-  const cámara = Mila.Cámara.nueva({zoom:25});
-  Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena});
+  const cámara = Mila.Cámara.nueva({zoom:50});
+  Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena, modoHtml:Mila.Pantalla.ModoHtmlLienzo.Svg});
+  Simu.Diseño.AgregarListenersEscenario();
   Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
+};
+
+Simu.Diseño.AgregarListenersEscenario = function() {
+  Mila.Contrato({
+    Propósito: "Registrar eventos para mover y zoomear el escenario."
+  });
+  const escenario = Simu.Diseño.escenario;
+  const cámara = escenario.cámara();
+  Simu.Diseño.arrastre = {};
+  const IniciarArrastreFondo = function(evento) {
+    Simu.Diseño.arrastre.posiciónInicialMouse = {x:evento.atributo_('posiciónEnX'), y:evento.atributo_('posiciónEnY')};
+    Simu.Diseño.arrastre.posiciónInicialCámara = cámara.posición();
+    Mila.Evento.Habilitar('ArrastrarFondo');
+    Mila.Evento.Habilitar('FinalizarArrastreFondo');
+  };
+  const ArrastrarFondo = function(x, y) {
+    escenario.CambiarPosiciónCámaraA_(Mila.Geometria.puntoEn__(
+      Simu.Diseño.arrastre.posiciónInicialCámara.x - (x - Simu.Diseño.arrastre.posiciónInicialMouse.x)*100/escenario.cámara().zoom(),
+      Simu.Diseño.arrastre.posiciónInicialCámara.y - (y - Simu.Diseño.arrastre.posiciónInicialMouse.y)*100/escenario.cámara().zoom()
+    ));
+  };
+  const FinalizarArrastreFondo = function(x, y) {
+    Mila.Evento.Deshabilitar('ArrastrarFondo');
+    Mila.Evento.Deshabilitar('FinalizarArrastreFondo');
+    delete Simu.Diseño.arrastre.posiciónInicialMouse;
+    delete Simu.Diseño.arrastre.posiciónInicialCámara;
+  };
+
+  Mila.Evento.Registrar('ArrastrarFondo',
+    Mila.Evento.deMovimientoMouse(Mila.Nada, Mila.Nada),
+    function(evento) {
+      ArrastrarFondo(evento.atributo_('posiciónEnX'), evento.atributo_('posiciónEnY'));
+    }
+  );
+  Mila.Evento.Deshabilitar('ArrastrarFondo');
+
+  Mila.Evento.Registrar('FinalizarArrastreFondo',
+    Mila.Evento.deBotonMouse(Mila.Evento.Mouse.clicIzquierdo, false),
+    function(evento) {
+      FinalizarArrastreFondo(evento.atributo_('posiciónEnX'), evento.atributo_('posiciónEnY'));
+    }
+  );
+  Mila.Evento.Deshabilitar('FinalizarArrastreFondo');
+
+  Mila.Evento.Registrar("IniciarArrastreFondo",
+    Mila.Evento.deClicSobreElementos(escenario._lienzo),
+    function(evento) {
+      IniciarArrastreFondo(evento);
+    }
+  );
+
+  Mila.Evento.Registrar('Zoom',
+    Mila.Evento.deRuedaMouse(Mila.Nada),
+    function(evento) {
+      const factor = evento.atributo_('desplazamiento') > 0 ? 1.1 : 0.9;
+      escenario.ZoomearCámaraEn_(factor);
+    }
+  );
 };
 
 Simu.Diseño.AgregarListenersDeslizadores = function() {

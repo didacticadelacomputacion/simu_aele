@@ -2,7 +2,7 @@ Mila.Módulo({
   define:"Simu",
   necesita:["$milascript/base"],
   usa:["$milascript/pantalla/todo",
-    "../src/parser","../src/interprete","../src/lenguaje","../src/disenio",
+    "../src/parser","../src/interprete","../src/lenguaje","../src/disenio","../src/carga",
     "$milascript/navegador"
   ]
 });
@@ -14,13 +14,6 @@ Simu.ajustes = {
 };
 
 Mila.alIniciar(function() {
-  Mila.Pantalla.nuevoPanelArrastrable = function(atributosPanel) {
-    const panel = Mila.Pantalla.nuevoPanel(Object.assign(atributosPanel,{cssAdicional:{'user-select':'none'}}));
-    const arrastrable = Mila.Pantalla.nuevoElementoArrastrable({
-      elementoVisual:panel
-    });
-    return arrastrable;
-  };
   let códigoRecibido = Mila.Navegador.argumentoUrl('codigo');
   if (códigoRecibido.esNada()) {
     Simu.IniciarSinCódigo();
@@ -96,22 +89,6 @@ Simu.IniciarConCódigo = function(código) {
     elementosEscritorio.push(Mila.Pantalla.nuevoPanel({elementos:[Simu.areaTexto],ancho:300}));
   }
   Simu.panelDiseño = Simu.Diseño.Inicializar(Simu.ajustes.modoVer, Simu.ajustes.placa, setupPlaca);
-  if (Simu.ajustes.modoVer == "MODULOS") {
-    const panelDeControl = Mila.Pantalla.nuevoPanel({
-      disposicion:"Horizontal", alto:"Minimizar",
-      elementos:[
-        Mila.Pantalla.nuevaEtiqueta({texto:"Mover la cámara: "}),
-        Mila.Pantalla.nuevoBoton({texto:"<-",funcion:() => Simu.Diseño.MoverCámara__(-10,0)}),
-        Mila.Pantalla.nuevoBoton({texto:"^",funcion:() => Simu.Diseño.MoverCámara__(0,-10)}),
-        Mila.Pantalla.nuevoBoton({texto:"v",funcion:() => Simu.Diseño.MoverCámara__(0,10)}),
-        Mila.Pantalla.nuevoBoton({texto:"->",funcion:() => Simu.Diseño.MoverCámara__(10,0)})
-      ]
-    });
-    Simu.panelDiseño = Mila.Pantalla.nuevoPanel({
-      disposicion:"Vertical",
-      elementos:[panelDeControl, Simu.panelDiseño]
-    })
-  }
   elementosEscritorio.push(Simu.panelDiseño);
   Simu.escritorio = Mila.Pantalla.nuevoPanel({elementos:elementosEscritorio, disposicion: "Horizontal"});
 
@@ -142,7 +119,7 @@ Simu.IniciarConCódigo = function(código) {
 
   Mila.Pantalla.nueva({elementos:[Simu.menuSuperior,Simu.escritorio]}, "Principal");
   Simu.Diseño.InicializarMódulos();
-  Simu.Diseño.Actualizar();
+  Simu.Carga.alTerminarDeCargar(Simu.Diseño.Actualizar);
 
   // Pantalla Boom
   Simu.etiquetaBoom = Mila.Pantalla.nuevaEtiqueta({texto:"-",ancho:"Maximizar"});

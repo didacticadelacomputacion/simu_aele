@@ -1,7 +1,7 @@
 Mila.Módulo({
   define:"Simu.Componentes",
   necesita:["$milascript/base"],
-  usa:["$milascript/geometria","$milascript/svg"]
+  usa:["$milascript/geometria","$milascript/svg","$milascript/dibujo","carga"]
 });
 
 // Componente genérico (superclase de todos los componentes)
@@ -56,22 +56,18 @@ Simu.Componentes._Componente.prototype.Inicializar = function(datosComponente) {
     ? datosComponente.ubicación
     : Mila.Geometria.puntoEn__(0,0)
   );
-  this.CambiarSvgA_(Mila.Svg.nuevo({
-    colorFondo: "#ddd",
-    comandos:[
-      Mila.Svg.nuevoComando('m',[0,0]),
-      Mila.Svg.nuevoComando('h',[50]),
-      Mila.Svg.nuevoComando('v',[50]),
-      Mila.Svg.nuevoComando('h',[-50]),
-      Mila.Svg.nuevoComando('z',[])
-    ]
-  }));
-  this._partes = [];
+  this.CambiarDibujoBaseA_(Mila.Dibujo.deRutaSvg_([
+    Mila.Svg.nuevoComando('m',[0,0]),
+    Mila.Svg.nuevoComando('h',[50]),
+    Mila.Svg.nuevoComando('v',[50]),
+    Mila.Svg.nuevoComando('h',[-50]),
+    Mila.Svg.nuevoComando('z',[])
+  ], {colorFondo: "#ddd"}));
 };
 
 Simu.Componentes._Componente.prototype.CambiarUbicaciónA_ = function(nuevaUbicación) {
   Mila.Contrato({
-    Propósito: "Cambia la ubicación de este componente por la dada.",
+    Propósito: "Cambiar la ubicación de este componente por la dada.",
     Parámetros: [
       [nuevaUbicación, Mila.Tipo.Punto]
     ]
@@ -79,31 +75,44 @@ Simu.Componentes._Componente.prototype.CambiarUbicaciónA_ = function(nuevaUbica
   this._ubicación = nuevaUbicación;
 };
 
-Simu.Componentes._Componente.prototype.CambiarSvgA_ = function(nuevoSvg) {
+Simu.Componentes._Componente.prototype.CambiarDibujoBaseA_ = function(nuevoDibujo) {
   Mila.Contrato({
-    Propósito: "Cambia el svg de este componente por el dado.",
+    Propósito: "Cambiar el dibujo de este componente por el dado.",
     Parámetros: [
-      [nuevoSvg, Mila.Tipo.Svg]
+      [nuevoDibujo, Mila.Tipo.Dibujo]
     ]
   });
-  this._svg = nuevoSvg;
+  this._dibujoBase = nuevoDibujo;
 };
 
 Simu.Componentes._Componente.prototype.ubicación = function() {
   Mila.Contrato({
-    Propósito: ["Describe la ubicación de este componente.", Mila.Tipo.Punto]
+    Propósito: ["Describir la ubicación de este componente.", Mila.Tipo.Punto]
   });
   return this._ubicación;
 };
 
-Simu.Componentes._Componente.prototype.svg = function() {
+Simu.Componentes._Componente.prototype.posiciónX = function() {
   Mila.Contrato({
-    Propósito: ["Describe el svg de este componente.", Mila.Tipo.Svg]
+    Propósito: ["Describir la posición x de este componente.", Mila.Tipo.Numero]
   });
-  return this._partes.esVacia()
-    ? this._svg
-    : Mila.Svg.nuevo({hijos:this._partes.transformados(x => x.svg).cons(this._svg)})
-  ;
+  return this._ubicación.x;
+};
+
+Simu.Componentes._Componente.prototype.posiciónY = function() {
+  Mila.Contrato({
+    Propósito: ["Describir la posición Y de este componente.", Mila.Tipo.Numero]
+  });
+  return this._ubicación.y;
+};
+
+Simu.Componentes._Componente.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de este componente.", Mila.Tipo.Dibujo]
+  });
+  /* Esta función debería reemplazarla cada subtipo de módulo para devolver un dibujo que sea un grupo entre el dibujo base y
+      todas sus partes móviles */
+  return this._dibujoBase;
 };
 
 // Placa
@@ -119,30 +128,42 @@ Mila.Tipo.Registrar({
 
 Simu.Componentes.nuevaPlaca = function(datosComponente) {
   Mila.Contrato({
-    Propósito: ["Describe una nueva placa a partir de los datos dados.", Mila.Tipo.ComponentePlaca],
+    Propósito: ["Describir una nueva placa a partir de los datos dados.", Mila.Tipo.ComponentePlaca],
     Parámetros: [
       [datosComponente]
     ]
   });
   const nuevo = new Simu.Componentes._Placa();
   nuevo.Inicializar(datosComponente);
-  const prefijoNombreArchivos = `${datosComponente.modelo}`;
-  Mila.Svg.ExtraerDesdeArchivo_YLuego_(
-    // Para usar la imagen completa (pero tarda un montón en dibujarla) borrar "_min".
-    Simu.rutaImagen(`${prefijoNombreArchivos}_BASE_min.svg`),
-    (svg) => nuevo.CambiarSvgA_(svg)
+  nuevo._modelo = 'modelo' in datosComponente ? datosComponente.modelo : "UNO_R3";
+  const prefijoNombreArchivos = `${nuevo._modelo}`;
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_BASE.svg`,
+    (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
   );
-  for (let i=0; i<5; i++) {
-    nuevo._partes.push({svg:Mila.Svg.nuevo()});
+  nuevo._pines = {};
+  for (let i=0; i<5; i++) { // TODO: esto debería depender de nuevo._modelo
+    nuevo._pines[`pin_${i}`] = {};
     const j = i;
-    Mila.Svg.ExtraerDesdeArchivo_YLuego_(
-      Simu.rutaImagen(`${prefijoNombreArchivos}_pin${j}.svg`),
-      (svg) => {
-        nuevo._partes[j].svg = svg;
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `${prefijoNombreArchivos}_pin_${j}.svg`,
+      (dibujo) => {
+        // TODO: Agregar evento de clic a 'dibujo'.
+        nuevo._pines[`pin_${j}`].dibujo = dibujo;
       }
     );
   }
+  // nuevo._led = ...
   return nuevo;
+};
+
+Simu.Componentes._Placa.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de esta placa.", Mila.Tipo.Dibujo]
+  });
+  return Mila.Dibujo.deGrupo_(this._pines.fold(
+    (clave, valor, rec) => rec.cons(valor.dibujo), []
+  ).cons(this._dibujoBase)/*.snoc(this._led.dibujo)*/, {escala:0.5});
 };
 
 // Pin
@@ -158,7 +179,7 @@ Mila.Tipo.Registrar({
 
 Simu.Componentes.nuevoPin = function(datosComponente) {
   Mila.Contrato({
-    Propósito: ["Describe un nuevo pin a partir de los datos dados.", Mila.Tipo.ComponentePin],
+    Propósito: ["Describir un nuevo pin a partir de los datos dados.", Mila.Tipo.ComponentePin],
     Parámetros: [
       [datosComponente]
     ]
@@ -170,18 +191,6 @@ Simu.Componentes.nuevoPin = function(datosComponente) {
 
 // Led
 
-Simu.Componentes.nuevoLed = function(datosComponente) {
-  Mila.Contrato({
-    Propósito: ["Describe un nuevo led a partir de los datos dados.", Mila.Tipo.ComponenteLed],
-    Parámetros: [
-      [datosComponente]
-    ]
-  });
-  const nuevo = new Simu.Componentes._Led();
-  nuevo.Inicializar(datosComponente);
-  return nuevo;
-};
-
 Simu.Componentes._Led = function Led() {};
 Object.setPrototypeOf(Simu.Componentes._Led.prototype, Simu.Componentes._Componente.prototype);
 
@@ -190,6 +199,55 @@ Mila.Tipo.Registrar({
   prototipo: Simu.Componentes._Led,
   subtipoDe: "Componente"
 });
+
+Simu.Componentes.nuevoLed = function(datosComponente) {
+  Mila.Contrato({
+    Propósito: ["Describir un nuevo led a partir de los datos dados.", Mila.Tipo.ComponenteLed],
+    Parámetros: [
+      [datosComponente]
+    ]
+  });
+  const nuevo = new Simu.Componentes._Led();
+  nuevo.Inicializar(datosComponente);
+  nuevo._tamaño = 'tamaño' in datosComponente ? datosComponente.tamaño : 10;
+  nuevo._color = 'color' in datosComponente ? datosComponente.color : "#fff";
+  const prefijoNombreArchivos = `LED_${nuevo._tamaño}mm`;
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_BASE.svg`,
+    (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
+  );
+  nuevo._pines = {};
+  for (let i of ['positivo', 'negativo']) {
+    nuevo._pines[`pin_${i}`] = {};
+    const j = i;
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `${prefijoNombreArchivos}_pin_${j}.svg`,
+      (dibujo) => {
+        // TODO: Agregar evento de clic a 'dibujo'.
+        nuevo._pines[`pin_${j}`].dibujo = dibujo;
+      }
+    );
+  }
+  nuevo._cristal = {};
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_Cristal.svg`,
+    (dibujo) => {
+      nuevo._cristal.dibujo = dibujo;
+    }
+  );
+  // nuevo._brillo = ...
+  // ¿ nuevo._rayos = ... ?
+  return nuevo;
+};
+
+Simu.Componentes._Led.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de este LED.", Mila.Tipo.Dibujo]
+  });
+  return Mila.Dibujo.deGrupo_(this._pines.fold(
+    (clave, valor, rec) => rec.cons(valor.dibujo), []
+  ).cons(this._dibujoBase).concatenadaCon_([this._cristal.dibujo/*, this._brillo.dibujo*/]));
+};
 
 // Buzzer
 
@@ -204,14 +262,41 @@ Mila.Tipo.Registrar({
 
 Simu.Componentes.nuevoBuzzer = function(datosComponente) {
   Mila.Contrato({
-    Propósito: ["Describe un nuevo buzzer a partir de los datos dados.", Mila.Tipo.ComponenteBuzzer],
+    Propósito: ["Describir un nuevo buzzer a partir de los datos dados.", Mila.Tipo.ComponenteBuzzer],
     Parámetros: [
       [datosComponente]
     ]
   });
   const nuevo = new Simu.Componentes._Buzzer();
   nuevo.Inicializar(datosComponente);
+  const prefijoNombreArchivos = 'BUZZER';
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_BASE.svg`,
+    (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
+  );
+  nuevo._pines = {};
+  for (let i of ['positivo', 'negativo']) {
+    nuevo._pines[`pin_${i}`] = {};
+    const j = i;
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `${prefijoNombreArchivos}_pin_${j}.svg`,
+      (dibujo) => {
+        // TODO: Agregar evento de clic a 'dibujo'.
+        nuevo._pines[`pin_${j}`].dibujo = dibujo;
+      }
+    );
+  }
+  // nuevo._ondasDeSonido = ...
   return nuevo;
+};
+
+Simu.Componentes._Buzzer.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de este buzzer.", Mila.Tipo.Dibujo]
+  });
+  return Mila.Dibujo.deGrupo_(this._pines.fold(
+    (clave, valor, rec) => rec.cons(valor.dibujo), []
+  ).cons(this._dibujoBase)/*.snoc(this._ondasDeSonido.dibujo)*/);
 };
 
 // Servo
