@@ -68,7 +68,7 @@ Simu.Diseño.componentes = {
     ubicación:Mila.Geometria.puntoEn__(0,200)
   },
   LED_8:{
-    clase:"LED", pin:8, modo: ['D','OUT'], // color:"#f00",
+    clase:"LED", pin:8, modo: ['D','OUT'], color:"#f00",
     ubicación:Mila.Geometria.puntoEn__(0,0)
   },
   'LED_MATRIX_mi matriz led':{
@@ -136,6 +136,7 @@ Simu.Diseño.InicializarMódulos = function() {
   });
   Simu.Diseño.componentes.valoresContenidos().conCadaUno(componente => {
     componente.componente = Simu.Componentes.nuevo(componente);
+    delete componente.ubicación; // La ubicación pasa a estar dentro del componente
   });
 };
 
@@ -147,14 +148,7 @@ Simu.Diseño.DibujarMódulos = function() {
       Simu.Diseño.modo == "MODULOS"
     ]
   });
-  const contenido = [];
-  Simu.Diseño.componentes.valoresContenidos().conCadaUno(componente => {
-    contenido.push({
-      posiciónEnX:() => componente.componente.ubicación().x,
-      posiciónEnY:() => componente.componente.ubicación().y,
-      dibujo: () => componente.componente.dibujo()
-    });
-  });
+  const contenido = Simu.Diseño.componentes.valoresContenidos().transformados(componente => componente.componente);
   const escena = Mila.Escena.nueva({contenido});
   const cámara = Mila.Cámara.nueva({zoom:50});
   Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena, modoHtml:Mila.Pantalla.ModoHtmlLienzo.Svg});
@@ -168,46 +162,23 @@ Simu.Diseño.AgregarListenersEscenario = function() {
   });
   const escenario = Simu.Diseño.escenario;
   const cámara = escenario.cámara();
-  Simu.Diseño.arrastre = {};
-  const IniciarArrastreFondo = function(evento) {
-    Simu.Diseño.arrastre.posiciónInicialMouse = {x:evento.atributo_('posiciónEnX'), y:evento.atributo_('posiciónEnY')};
-    Simu.Diseño.arrastre.posiciónInicialCámara = cámara.posición();
-    Mila.Evento.Habilitar('ArrastrarFondo');
-    Mila.Evento.Habilitar('FinalizarArrastreFondo');
-  };
-  const ArrastrarFondo = function(x, y) {
-    escenario.CambiarPosiciónCámaraA_(Mila.Geometria.puntoEn__(
-      Simu.Diseño.arrastre.posiciónInicialCámara.x - (x - Simu.Diseño.arrastre.posiciónInicialMouse.x)*100/escenario.cámara().zoom(),
-      Simu.Diseño.arrastre.posiciónInicialCámara.y - (y - Simu.Diseño.arrastre.posiciónInicialMouse.y)*100/escenario.cámara().zoom()
-    ));
-  };
-  const FinalizarArrastreFondo = function(x, y) {
-    Mila.Evento.Deshabilitar('ArrastrarFondo');
-    Mila.Evento.Deshabilitar('FinalizarArrastreFondo');
-    delete Simu.Diseño.arrastre.posiciónInicialMouse;
-    delete Simu.Diseño.arrastre.posiciónInicialCámara;
-  };
+  Simu.Diseño.arrastre = Mila.Nada;
 
-  Mila.Evento.Registrar('ArrastrarFondo',
-    Mila.Evento.deMovimientoMouse(Mila.Nada, Mila.Nada),
-    function(evento) {
-      ArrastrarFondo(evento.atributo_('posiciónEnX'), evento.atributo_('posiciónEnY'));
-    }
-  );
-  Mila.Evento.Deshabilitar('ArrastrarFondo');
-
-  Mila.Evento.Registrar('FinalizarArrastreFondo',
-    Mila.Evento.deBotonMouse(Mila.Evento.Mouse.clicIzquierdo, false),
-    function(evento) {
-      FinalizarArrastreFondo(evento.atributo_('posiciónEnX'), evento.atributo_('posiciónEnY'));
-    }
-  );
-  Mila.Evento.Deshabilitar('FinalizarArrastreFondo');
-
-  Mila.Evento.Registrar("IniciarArrastreFondo",
-    Mila.Evento.deClicSobreElementos(escenario._lienzo),
-    function(evento) {
-      IniciarArrastreFondo(evento);
+  Mila.Evento.RegistrarArrastre(
+    'ArrastreFondo',
+    escenario._lienzo,
+    function(dataArrastre) {
+      escenario.CambiarPosiciónCámaraA_(Mila.Geometria.puntoEn__(
+        Simu.Diseño.arrastre.posiciónInicial.x - (dataArrastre.desplazamientoEnX)*100/escenario.cámara().zoom(),
+        Simu.Diseño.arrastre.posiciónInicial.y - (dataArrastre.desplazamientoEnY)*100/escenario.cámara().zoom()
+      ));
+    }, {
+      fInicial: function(dataArrastre) {
+        Simu.Diseño.arrastre.posiciónInicial = cámara.posición();
+      },
+      fFinal: function(dataArrastre) {
+        Simu.Diseño.arrastre = Mila.Nada;
+      }
     }
   );
 

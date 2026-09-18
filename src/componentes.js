@@ -52,9 +52,13 @@ Simu.Componentes._Componente.prototype.Inicializar = function(datosComponente) {
       [datosComponente]
     ]
   });
-  this.CambiarUbicaciónA_(datosComponente.defineLaClave_('ubicación')
-    ? datosComponente.ubicación
-    : Mila.Geometria.puntoEn__(0,0)
+  this.CambiarPosiciónXA_(datosComponente.defineLaClave_('ubicación')
+    ? datosComponente.ubicación.x
+    : 0
+  );
+  this.CambiarPosiciónYA_(datosComponente.defineLaClave_('ubicación')
+    ? datosComponente.ubicación.y
+    : 0
   );
   this.CambiarDibujoBaseA_(Mila.Dibujo.deRutaSvg_([
     Mila.Svg.nuevoComando('m',[0,0]),
@@ -65,14 +69,24 @@ Simu.Componentes._Componente.prototype.Inicializar = function(datosComponente) {
   ], {colorFondo: "#ddd"}));
 };
 
-Simu.Componentes._Componente.prototype.CambiarUbicaciónA_ = function(nuevaUbicación) {
+Simu.Componentes._Componente.prototype.CambiarPosiciónXA_ = function(nuevaPosiciónX) {
   Mila.Contrato({
-    Propósito: "Cambiar la ubicación de este componente por la dada.",
+    Propósito: "Cambiar la posición x de este componente por la dada.",
     Parámetros: [
-      [nuevaUbicación, Mila.Tipo.Punto]
+      [nuevaPosiciónX, Mila.Tipo.Numero]
     ]
   });
-  this._ubicación = nuevaUbicación;
+  this._posiciónX = nuevaPosiciónX;
+};
+
+Simu.Componentes._Componente.prototype.CambiarPosiciónYA_ = function(nuevaPosiciónY) {
+  Mila.Contrato({
+    Propósito: "Cambiar la posición y de este componente por la dada.",
+    Parámetros: [
+      [nuevaPosiciónY, Mila.Tipo.Numero]
+    ]
+  });
+  this._posiciónY = nuevaPosiciónY;
 };
 
 Simu.Componentes._Componente.prototype.CambiarDibujoBaseA_ = function(nuevoDibujo) {
@@ -89,21 +103,21 @@ Simu.Componentes._Componente.prototype.ubicación = function() {
   Mila.Contrato({
     Propósito: ["Describir la ubicación de este componente.", Mila.Tipo.Punto]
   });
-  return this._ubicación;
+  return Mila.Geometria.puntoEn__(this._posiciónX, this._posiciónY);
 };
 
-Simu.Componentes._Componente.prototype.posiciónX = function() {
+Simu.Componentes._Componente.prototype.posiciónEnX = function() {
   Mila.Contrato({
     Propósito: ["Describir la posición x de este componente.", Mila.Tipo.Numero]
   });
-  return this._ubicación.x;
+  return this._posiciónX;
 };
 
-Simu.Componentes._Componente.prototype.posiciónY = function() {
+Simu.Componentes._Componente.prototype.posiciónEnY = function() {
   Mila.Contrato({
     Propósito: ["Describir la posición Y de este componente.", Mila.Tipo.Numero]
   });
-  return this._ubicación.y;
+  return this._posiciónY;
 };
 
 Simu.Componentes._Componente.prototype.dibujo = function() {
@@ -210,7 +224,6 @@ Simu.Componentes.nuevoLed = function(datosComponente) {
   const nuevo = new Simu.Componentes._Led();
   nuevo.Inicializar(datosComponente);
   nuevo._tamaño = 'tamaño' in datosComponente ? datosComponente.tamaño : 10;
-  nuevo._color = 'color' in datosComponente ? datosComponente.color : "#fff";
   const prefijoNombreArchivos = `LED_${nuevo._tamaño}mm`;
   Simu.Carga.CargarArchivoSvg_YLuego_(
     `${prefijoNombreArchivos}_BASE.svg`,
@@ -233,6 +246,7 @@ Simu.Componentes.nuevoLed = function(datosComponente) {
     `${prefijoNombreArchivos}_Cristal.svg`,
     (dibujo) => {
       nuevo._cristal.dibujo = dibujo;
+      nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#fff");
     }
   );
   // nuevo._brillo = ...
@@ -247,6 +261,18 @@ Simu.Componentes._Led.prototype.dibujo = function() {
   return Mila.Dibujo.deGrupo_(this._pines.fold(
     (clave, valor, rec) => rec.cons(valor.dibujo), []
   ).cons(this._dibujoBase).concatenadaCon_([this._cristal.dibujo/*, this._brillo.dibujo*/]));
+};
+
+Simu.Componentes._Led.prototype.CambiarColorA_ = function(nuevoColor) {
+  Mila.Contrato({
+    Propósito: "Cambiar el color de este LED por el dado.",
+    Parámetros: [
+      [nuevoColor, Mila.Tipo.Texto] // ¿Color?
+    ]
+  });
+  this._color = nuevoColor;
+  this._cristal.dibujo._grupo[0]._grupo[1].CambiarEstilo_A_('colorFondo', nuevoColor);
+  this._cristal.dibujo._grupo[0]._grupo[2].CambiarEstilo_A_('colorFondo', nuevoColor);
 };
 
 // Buzzer
