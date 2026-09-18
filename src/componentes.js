@@ -345,7 +345,55 @@ Simu.Componentes.nuevoServo = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Servo();
   nuevo.Inicializar(datosComponente);
+  const prefijoNombreArchivos = 'SERVO';
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_BASE.svg`,
+    (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
+  );
+  nuevo._pata = {};
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_${
+      'tipoPata' in datosComponente ? datosComponente.tipoPata : 'pata1'
+    }.svg`,
+    (dibujo) => {
+      // TODO: Pensar cómo hacer para que no haya que harcodear esto.
+      dibujo.estilo().ejeDeRotaciónX = 95;
+      dibujo.estilo().ejeDeRotaciónY = 95;
+      nuevo._pata.dibujo = dibujo;
+    }
+  );
+  nuevo._pines = {};
+  for (let i of ['negativo', 'positivo', 'dato']) {
+    nuevo._pines[`pin_${i}`] = {};
+    const j = i;
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `${prefijoNombreArchivos}_pin_${j}.svg`,
+      (dibujo) => {
+        // TODO: Agregar evento de clic a 'dibujo'.
+        nuevo._pines[`pin_${j}`].dibujo = dibujo;
+      }
+    );
+  }
   return nuevo;
+};
+
+Simu.Componentes._Servo.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de este servo.", Mila.Tipo.Dibujo]
+  });
+  return Mila.Dibujo.deGrupo_(this._pines.fold(
+    (clave, valor, rec) => rec.cons(valor.dibujo), []
+  ).cons(this._dibujoBase).snoc(this._pata.dibujo));
+};
+
+Simu.Componentes._Servo.prototype.RotarPataA_Grados = function(ángulo) {
+  Mila.Contrato({
+    Propósito: "Cambiar el ángulo de rotación de la pata de este servo por el dado.",
+    Parámetros: [
+      [ángulo, Mila.Tipo.Numero]
+    ]
+  });
+  this._pata.dibujo.CambiarEstilo_A_('rotación', ángulo);
 };
 
 // Matriz de leds

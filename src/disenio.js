@@ -88,7 +88,7 @@ Simu.Diseño.componentes = {
     ubicación:Mila.Geometria.puntoEn__(600,0)
   },
   SERVO_10:{
-    clase:"SERVO", pin:10,
+    clase:"SERVO", pin:10, tipoPata:'pata4',
     ubicación:Mila.Geometria.puntoEn__(600,800)
   }
 };
