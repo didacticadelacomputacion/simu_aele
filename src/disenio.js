@@ -154,6 +154,8 @@ Simu.Diseño.DibujarMódulos = function() {
   Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena, modoHtml:Mila.Pantalla.ModoHtmlLienzo.Svg});
   Simu.Diseño.AgregarListenersEscenario();
   Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
+
+  Simu.Cables.Inicializar();
 };
 
 Simu.Diseño.AgregarListenersEscenario = function() {
@@ -172,6 +174,7 @@ Simu.Diseño.AgregarListenersEscenario = function() {
         Simu.Diseño.arrastre.posiciónInicial.x - (dataArrastre.desplazamientoEnX)*100/escenario.cámara().zoom(),
         Simu.Diseño.arrastre.posiciónInicial.y - (dataArrastre.desplazamientoEnY)*100/escenario.cámara().zoom()
       ));
+      Simu.Cables.ActualizarPosicionesCables_();
     }, {
       fInicial: function(dataArrastre) {
         Simu.Diseño.arrastre.posiciónInicial = cámara.posición();
@@ -187,6 +190,7 @@ Simu.Diseño.AgregarListenersEscenario = function() {
     function(evento) {
       const factor = evento.atributo_('desplazamiento') > 0 ? 1.1 : 0.9;
       escenario.ZoomearCámaraEn_(factor);
+      Simu.Cables.ActualizarPosicionesCables_();
     }
   );
 };

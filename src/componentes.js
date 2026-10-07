@@ -156,14 +156,12 @@ Simu.Componentes.nuevaPlaca = function(datosComponente) {
     (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
   );
   nuevo._pines = {};
-  for (let i=0; i<5; i++) { // TODO: esto debería depender de nuevo._modelo
-    nuevo._pines[`pin_${i}`] = {};
-    const j = i;
+  for (const id of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,'A0','A1','A2','A3','A4','A5']) {
+    nuevo._pines[`pin_${id}`] = {};
     Simu.Carga.CargarArchivoSvg_YLuego_(
-      `${prefijoNombreArchivos}_pin_${j}.svg`,
+      `${prefijoNombreArchivos}_pin_${id}.svg`,
       (dibujo) => {
-        // TODO: Agregar evento de clic a 'dibujo'.
-        nuevo._pines[`pin_${j}`].dibujo = dibujo;
+        nuevo._pines[`pin_${id}`].dibujo = dibujo;
       }
     );
   }
