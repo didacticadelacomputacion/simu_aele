@@ -1,7 +1,7 @@
 Mila.Módulo({
   define:"Simu.Diseño",
   necesita:["$milascript/base"],
-  usa:["$milascript/pantalla/todo","$milascript/audio","$milascript/geometria","componentes"]
+  usa:["$milascript/pantalla/todo","$milascript/audio","$milascript/geometria","componentes","cables","interfazModulos"]
 });
 
 Simu.Diseño.Inicializar = function(modo, placa, setupPlaca) {
@@ -156,6 +156,7 @@ Simu.Diseño.DibujarMódulos = function() {
   Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
 
   Simu.Cables.Inicializar();
+  Simu.InterfazMódulos.Inicializar();
 };
 
 Simu.Diseño.AgregarListenersEscenario = function() {
@@ -175,6 +176,7 @@ Simu.Diseño.AgregarListenersEscenario = function() {
         Simu.Diseño.arrastre.posiciónInicial.y - (dataArrastre.desplazamientoEnY)*100/escenario.cámara().zoom()
       ));
       Simu.Cables.ActualizarPosicionesCables_();
+      Simu.InterfazMódulos.ActualizarOverlay_();
     }, {
       fInicial: function(dataArrastre) {
         Simu.Diseño.arrastre.posiciónInicial = cámara.posición();
@@ -191,6 +193,7 @@ Simu.Diseño.AgregarListenersEscenario = function() {
       const factor = evento.atributo_('desplazamiento') > 0 ? 1.1 : 0.9;
       escenario.ZoomearCámaraEn_(factor);
       Simu.Cables.ActualizarPosicionesCables_();
+      Simu.InterfazMódulos.ActualizarOverlay_();
     }
   );
 };

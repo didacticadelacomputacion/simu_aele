@@ -273,6 +273,10 @@ Simu.Componentes._Led.prototype.CambiarColorA_ = function(nuevoColor) {
   this._cristal.dibujo._grupo[0]._grupo[2].CambiarEstilo_A_('colorFondo', nuevoColor);
 };
 
+Simu.Componentes._Led.prototype.color = function() {
+  return this._color;
+};
+
 // Buzzer
 
 Simu.Componentes._Buzzer = function Buzzer() {};
