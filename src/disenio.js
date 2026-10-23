@@ -452,8 +452,7 @@ Simu.Diseño.SetLed = function(pin, valor, intensidad) {
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `LED_${pin}`;
     if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
-      // TODO
-      // Simu.Diseño.componentes[claveModulo].componente.EstablecerValorEn_(...);
+       Simu.Diseño.componentes[claveModulo].componente.EstablecerValorEn_(valor, intensidad);
     }
   }
 };
@@ -577,8 +576,7 @@ Simu.Diseño.ReiniciarValoresMódulos = function() {
   for (let claveModulo in Simu.Diseño.componentes) {
     const modulo = Simu.Diseño.componentes[claveModulo];
     if (modulo.defineLaClave_('componente') && modulo.componente.sabeResponder_('Reiniciar')) {
-      // TODO
-      // modulo.componente.Reiniciar();
+      modulo.componente.Reiniciar();
     }
   }
 };

@@ -247,10 +247,65 @@ Simu.Componentes.nuevoLed = function(datosComponente) {
       nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#fff");
     }
   );
-  // nuevo._brillo = ...
+  nuevo._brillo = {};
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    `${prefijoNombreArchivos}_Brillo.svg`,
+    (dibujo) => {
+      nuevo._brillo.dibujo = dibujo;
+      nuevo._brillo.capa = dibujo._grupo[0]._grupo[1];
+      nuevo._brillo.gradiente = Simu.Componentes._NuevoGradienteDeBrillo_();
+      nuevo._brillo.capa.CambiarEstilo_A_('colorFondo', `url(#${nuevo._brillo.gradiente.id})`);
+      nuevo.EstablecerValorEn_("LOW", "BINARIA");
+      nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#fff");
+    }
+  );
   // ¿ nuevo._rayos = ... ?
   return nuevo;
 };
+
+
+Simu.Componentes._contadorGradientesDeBrillo = 0;
+
+Simu.Componentes._DefsDeGradientesDeBrillo_ = function() {
+  if(!Simu.Componentes._defsDeGradientesDeBrillo) {
+    const svgOculto = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgOculto.setAttribute("width", "0");
+    svgOculto.setAttribute("height", "0");
+    svgOculto.style.position = "absolute";
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    svgOculto.appendChild(defs);
+    document.body.appendChild(svgOculto);
+    Simu.Componentes._defsDeGradientesDeBrillo = defs;
+  }
+  return Simu.Componentes._defsDeGradientesDeBrillo;
+}
+
+Simu.Componentes._NuevoGradienteDeBrillo_ = function() {
+  const id = `brillo-led-${Simu.Componentes._contadorGradientesDeBrillo++}`;
+  const gradiente = document.createElementNS("http://www.w3.org/2000/svg", "radialGradient");
+  gradiente.setAttribute("id", id);
+  gradiente.setAttribute("gradientUnits", "userSpaceOnUse");
+  gradiente.setAttribute("cx", "50");
+  gradiente.setAttribute("cy", "36.384487");
+  gradiente.setAttribute("r", "56.565");
+  const paradaCentro = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+  paradaCentro.setAttribute("offset", "0%");
+  paradaCentro.setAttribute("stop-opacity", "1");
+  const paradaMedia = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+  paradaMedia.setAttribute("offset", "18%");
+  paradaMedia.setAttribute("stop-opacity", "0.85");
+  const paradaFinDelBrillo = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+  paradaFinDelBrillo.setAttribute("offset", "65%");
+  paradaFinDelBrillo.setAttribute("stop-opacity", "0");
+  const paradaBorde = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+  paradaBorde.setAttribute("offset", "100%");
+  paradaBorde.setAttribute("stop-opacity", "0");
+  gradiente.append(paradaCentro, paradaMedia, paradaFinDelBrillo, paradaBorde);
+  Simu.Componentes._DefsDeGradientesDeBrillo_().appendChild(gradiente);
+  return {id, paradaCentro, paradaMedia, paradaFinDelBrillo, paradaBorde};
+};
+
+
 
 Simu.Componentes._Led.prototype.dibujo = function() {
   Mila.Contrato({
@@ -258,7 +313,7 @@ Simu.Componentes._Led.prototype.dibujo = function() {
   });
   return Mila.Dibujo.deGrupo_(this._pines.fold(
     (clave, valor, rec) => rec.cons(valor.dibujo), []
-  ).cons(this._dibujoBase).concatenadaCon_([this._cristal.dibujo/*, this._brillo.dibujo*/]));
+  ).cons(this._dibujoBase).concatenadaCon_([this._cristal.dibujo, this._brillo.dibujo]));
 };
 
 Simu.Componentes._Led.prototype.CambiarColorA_ = function(nuevoColor) {
@@ -269,12 +324,47 @@ Simu.Componentes._Led.prototype.CambiarColorA_ = function(nuevoColor) {
     ]
   });
   this._color = nuevoColor;
-  this._cristal.dibujo._grupo[0]._grupo[1].CambiarEstilo_A_('colorFondo', nuevoColor);
-  this._cristal.dibujo._grupo[0]._grupo[2].CambiarEstilo_A_('colorFondo', nuevoColor);
+  if('dibujo' in this._cristal){
+    this._cristal.dibujo._grupo[0]._grupo[1].CambiarEstilo_A_('colorFondo', nuevoColor);
+    this._cristal.dibujo._grupo[0]._grupo[2].CambiarEstilo_A_('colorFondo', nuevoColor);
+  }
+  if('gradiente' in this._brillo) {
+    this._brillo.gradiente.paradaCentro.setAttribute("stop-color", nuevoColor);
+    this._brillo.gradiente.paradaMedia.setAttribute("stop-color", nuevoColor);
+    this._brillo.gradiente.paradaFinDelBrillo.setAttribute("stop-color", nuevoColor);
+    this._brillo.gradiente.paradaBorde.setAttribute("stop-color", nuevoColor);
+  }
 };
 
 Simu.Componentes._Led.prototype.color = function() {
   return this._color;
+};
+
+Simu.Componentes._Led.prototype.EstablecerValorEn_ = function(valor, intensidad) {
+  Mila.Contrato({
+    Propósito: "Encender o apagar el brillo de este LED según el valor y la intensidad dados.",
+    Parámetros: [
+      [valor, Mila.Tipo.O[Mila.Tipo.Texto, Mila.Tipo.Numero]],
+      [intensidad, Mila.Tipo.Texto]
+    ]
+  });
+  let opacidad;
+  if (intensidad == "BINARIA") {
+    opacidad = (valor == "HIGH") ? 1 : 0;
+  } else if (intensidad == "PORCENTAJE") {
+    opacidad = valor / 100;
+  } else /* RAW */ {
+    opacidad = valor / 255;
+  }
+  this._brillo.capa.CambiarEstilo_A_('opacidadFondo', opacidad);
+};
+
+
+Simu.Componentes._Led.prototype.Reiniciar = function() {
+  Mila.Contrato({
+    Propósito: "Devolver este LED a su estado apagado."
+  });
+  this.EstablecerValorEn_("LOW", "BINARIA");
 };
 
 // Buzzer
