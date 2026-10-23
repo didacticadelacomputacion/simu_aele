@@ -153,7 +153,7 @@ Simu.Lenguaje.comandosPrimitivos = {
     aJs:function(nodo, hijos) {
       let pin = hijos.pin;
       let nota = hijos.defineLaClave_('nota')
-        ? hijos.nota
+        ? `"${hijos.nota}"`
         : '"Do"'
       ;
       let código = `EncenderBuzzer({pin:${pin},nota:${nota}`;
