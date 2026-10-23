@@ -127,15 +127,46 @@ Simu.Lenguaje.comandosPrimitivos = {
     }
   },
   "EncenderBuzzer":{
-    p:P([tt("Encender"),tt("buzzer"),rec("EXPRESIÓN")],function(tokens, textoOriginal) {
+    p:P([tt("Encender"),tt("buzzer"),rec("EXPRESIÓN"), 
+      opt(sec([tt("tocando"), tt("la"), tt("nota"), rec("EXPRESIÓN")])), 
+      opt(sec([tt("durante"), rec("EXPRESIÓN"), opt(sec([tt("ms"), tt("s"), tt("mms")]))]))
+    ],function(tokens, textoOriginal) {
+      const hijos = {pin:Simu.Lenguaje.comoPin(tokens[2])};
+      if(tokens.length > 3 && Peque.Parser.esTokenAtómico(tokens[3]) && tokens[3].texto() == 'tocando') {
+        hijos.nota = tokens[6];
+      }
+      const campos = {unidad:'s'};
+      if(tokens.length > 3 && Peque.Parser.esTokenAtómico(tokens[3]) && tokens[3].texto() == 'durante') {
+        hijos.cantidad = tokens[4];
+        campos.unidad = tokens.length > 5 ? tokens[5].texto() : 's';
+      } else if(tokens.length > 7 && Peque.Parser.esTokenAtómico(tokens[7]) && tokens[7].texto() == 'durante') {
+        hijos.cantidad = tokens[8];
+        campos.unidad = tokens.length > 9 ? tokens[9].texto() : 's';
+      }
       return Mila.AST.nuevoNodo({
         tipoNodo: "EncenderBuzzer",
-        hijos: {pin:Simu.Lenguaje.comoPin(tokens[2])},
+        campos,
+        hijos,
         textoOriginal
       });
     }),
-    exec:function(pin) {
-      Simu.Diseño.EncenderBuzzer(pin);
+    aJs:function(nodo, hijos) {
+      let pin = hijos.pin;
+      let nota = hijos.defineLaClave_('nota')
+        ? hijos.nota
+        : '"Do"'
+      ;
+      let código = `EncenderBuzzer({pin:${pin},nota:${nota}`;
+      if (hijos.defineLaClave_('cantidad')) {
+        const duraciónEnMs = Simu.Lenguaje.tiempoAJs(hijos.cantidad, nodo.unidad());
+        código += `,duración:${duraciónEnMs}});\nEsperar(${duraciónEnMs});\nApagarBuzzer(${pin});`;
+      } else {
+        código += '});';
+      }
+      return código;
+    },
+    exec:function(parametros) {
+      Simu.Diseño.EncenderBuzzer(parametros.pin, parametros.nota, parametros.duración);
     }
   },
   "ApagarBuzzer":{

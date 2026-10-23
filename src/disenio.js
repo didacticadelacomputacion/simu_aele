@@ -457,11 +457,13 @@ Simu.Diseño.SetLed = function(pin, valor, intensidad) {
   }
 };
 
-Simu.Diseño.EncenderBuzzer = function(pin) {
+Simu.Diseño.EncenderBuzzer = function(pin, nota, duración) {
   Mila.Contrato({
     Propósito:"Actualizar el panel de diseño para reflejar que un buzzer conectado al pin dado se encendió.",
     Parámetros: [
-      [pin, Mila.Tipo.Texto]
+      [pin, Mila.Tipo.Texto],
+      [nota, Mila.Tipo.O([Mila.Tipo.Texto, Mila.Tipo.Numero])],
+      [duración]
     ]
   });
   if (Simu.Diseño.modo == "PINES") {
@@ -469,7 +471,7 @@ Simu.Diseño.EncenderBuzzer = function(pin) {
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
     let claveModulo = `BUZZER_${pin}`;
-    Mila.Audio.Reproducir(Mila.Audio.nota("Do"));
+    Mila.Audio.Reproducir(nota, Mila.Tipo.esAlgo(duración) ? {durante: duración} : {});
   }
 };
 
