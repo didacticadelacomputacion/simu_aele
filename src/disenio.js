@@ -67,7 +67,7 @@ Simu.Diseño.componentes = {
     clase:"BOARD", modelo:"UNO_R3",
     ubicación:Mila.Geometria.puntoEn__(0,200)
   },
-  LED_8:{
+ /* LED_8:{
     clase:"LED", pin:8, modo: ['D','OUT'], color:"#f00",
     ubicación:Mila.Geometria.puntoEn__(0,0)
   },
@@ -90,7 +90,7 @@ Simu.Diseño.componentes = {
   SERVO_10:{
     clase:"SERVO", pin:10, tipoPata:'pata4',
     ubicación:Mila.Geometria.puntoEn__(600,800)
-  }
+  }*/
 };
 
 Simu.Diseño.MoverCámara__ = function(x, y) {

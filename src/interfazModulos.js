@@ -8,7 +8,7 @@ Mila.Módulo({
 Simu.InterfazMódulos._tiposDeMóduloAgregables = [
   { clase: "LED", etiqueta: "Led" },
   { clase: "BUZZER", etiqueta: "Buzzer" },
-  { clase: "SERVO", etiqueta: "Servo" },
+ // { clase: "SERVO", etiqueta: "Servo" },
 ];
 
 

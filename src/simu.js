@@ -8,7 +8,7 @@ Mila.Módulo({
 });
 
 Simu.ajustes = {
-  modoCódigo:"EDITAR", // VER, EDITAR, NO
+  modoCódigo:"NO", // VER, EDITAR, NO
   modoVer:"MODULOS", // PINES, MODULOS
   placa:"UNO" // UNO MEGA NANO ...
 };
