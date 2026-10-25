@@ -262,7 +262,7 @@ Simu.Componentes.nuevoLed = function(datosComponente) {
     `${prefijoNombreArchivos}_Cristal.svg`,
     (dibujo) => {
       nuevo._cristal.dibujo = dibujo;
-      nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#fff");
+      nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#ffffff");
     }
   );
   nuevo._brillo = {};
@@ -274,7 +274,7 @@ Simu.Componentes.nuevoLed = function(datosComponente) {
       nuevo._brillo.gradiente = Simu.Componentes._NuevoGradienteDeBrillo_();
       nuevo._brillo.capa.CambiarEstilo_A_('colorFondo', `url(#${nuevo._brillo.gradiente.id})`);
       nuevo.EstablecerValorEn_("LOW", "BINARIA");
-      nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#fff");
+      nuevo.CambiarColorA_('color' in datosComponente ? datosComponente.color : "#ffffff");
     }
   );
   // ¿ nuevo._rayos = ... ?
