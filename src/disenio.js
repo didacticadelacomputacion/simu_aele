@@ -153,7 +153,10 @@ Simu.Diseño.DibujarMódulos = function() {
   Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena, modoHtml:Mila.Pantalla.ModoHtmlLienzo.Svg});
   Simu.Diseño.AgregarListenersEscenario();
   Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
+  Simu.Diseño.AgregarListenersAdicionales();
+};
 
+Simu.Diseño.AgregarListenersAdicionales = function() {
   Simu.Cables.Inicializar();
   Simu.InterfazMódulos.Inicializar();
 };
@@ -412,8 +415,7 @@ Simu.Diseño.BOOM = function(mensaje) {
   if (boom.esAlgo()) {
     Simu.Boom(boom);
   } else {
-    // Simu.PantallaBoom(mensaje);
-    alert(mensaje);
+    Simu.PantallaBoom(mensaje);
     Simu.Finalizar();
   }
 };
