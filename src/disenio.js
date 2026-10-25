@@ -1,7 +1,7 @@
 Mila.Módulo({
   define:"Simu.Diseño",
   necesita:["$milascript/base"],
-  usa:["$milascript/pantalla/todo","$milascript/audio","$milascript/geometria","componentes","cables","interfazModulos"]
+  usa:["$milascript/pantalla/todo","$milascript/geometria","componentes","cables","interfazModulos"]
 });
 
 Simu.Diseño.Inicializar = function(modo, placa, setupPlaca) {
@@ -20,8 +20,7 @@ Simu.Diseño.Inicializar = function(modo, placa, setupPlaca) {
     Simu.Diseño.pinesIO = setupPlaca.pinesIO;
     Simu.Diseño.componentes = setupPlaca.componentes;
   }
-  Simu.Diseño.panel = Mila.Pantalla.nuevoPanel({grosorBorde:1, colorBorde:"#888"});
-  Mila.Audio.EstablecerVolumenEn_(20);
+  Simu.Diseño.panel = Mila.Pantalla.nuevoPanel();
   return Simu.Diseño.panel;
 };
 
@@ -413,7 +412,8 @@ Simu.Diseño.BOOM = function(mensaje) {
   if (boom.esAlgo()) {
     Simu.Boom(boom);
   } else {
-    Simu.PantallaBoom(mensaje);
+    // Simu.PantallaBoom(mensaje);
+    alert(mensaje);
     Simu.Finalizar();
   }
 };
@@ -450,28 +450,33 @@ Simu.Diseño.SetLed = function(pin, valor, intensidad) {
     );
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
-    let claveModulo = `LED_${pin}`;
-    if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
-       Simu.Diseño.componentes[claveModulo].componente.EstablecerValorEn_(valor, intensidad);
+    const componente = Simu.Diseño.componenteEnPin_(pin);
+    if (componente.esAlgo() && componente.esUnLed()) {
+       componente.EstablecerValorEn_(valor, intensidad);
+    } else {
+      Simu.Diseño.BOOM(`No hay un led en el pin ${pin}.`);
     }
   }
 };
 
-Simu.Diseño.EncenderBuzzer = function(pin, nota, duración) {
+Simu.Diseño.EncenderBuzzer = function(pin, nota) {
   Mila.Contrato({
     Propósito:"Actualizar el panel de diseño para reflejar que un buzzer conectado al pin dado se encendió.",
     Parámetros: [
       [pin, Mila.Tipo.Texto],
-      [nota, Mila.Tipo.O([Mila.Tipo.Texto, Mila.Tipo.Numero])],
-      [duración]
+      [nota, Mila.Tipo.O([Mila.Tipo.Texto, Mila.Tipo.Numero])]
     ]
   });
   if (Simu.Diseño.modo == "PINES") {
     Simu.Diseño.AsignarValorPin(pin, "HIGH");
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
-    let claveModulo = `BUZZER_${pin}`;
-    Mila.Audio.Reproducir(nota, Mila.Tipo.esAlgo(duración) ? {durante: duración} : {});
+    const componente = Simu.Diseño.componenteEnPin_(pin);
+    if (componente.esAlgo() && componente.esUnBuzzer()) {
+       componente.TocarNota_(nota);
+    } else {
+      Simu.Diseño.BOOM(`No hay un buzzer en el pin ${pin}.`);
+    }
   }
 };
 
@@ -486,8 +491,12 @@ Simu.Diseño.ApagarBuzzer = function(pin) {
     Simu.Diseño.AsignarValorPin(pin, "LOW");
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
-    let claveModulo = `BUZZER_${pin}`;
-    Mila.Audio.Detener();
+    const componente = Simu.Diseño.componenteEnPin_(pin);
+    if (componente.esAlgo() && componente.esUnBuzzer()) {
+       componente.Detener();
+    } else {
+      Simu.Diseño.BOOM(`No hay un buzzer en el pin ${pin}.`);
+    }
   }
 };
 
@@ -581,6 +590,26 @@ Simu.Diseño.ReiniciarValoresMódulos = function() {
       modulo.componente.Reiniciar();
     }
   }
+};
+
+Simu.Diseño.componenteEnPin_ = function(pin) {
+  Mila.Contrato({
+    Propósito:[
+      "Describir el componente que está conectado en el pin dado o Nada si no hay ninguno.",
+      Mila.Tipo.O([Mila.Tipo.Componente, Mila.Tipo.Nada])
+    ],
+    Parámetros:[
+      [pin, Mila.Tipo.Texto]
+    ]
+  });
+  // TODO: que no esté harcodeada la placa
+  const placaActual = Simu.Diseño.componentes.UnoR3.componente;
+  return Simu.Cables.conexionesPlaca_(placaActual)
+    .ConElPrimeroQueCumple_Hacer_YSiNingunoCumple_(
+      (x => x.pin == `pin_${pin}`),
+      (x => x.componente),
+      (() => Mila.Nada)
+    );
 };
 
 Simu.Diseño.placas = {

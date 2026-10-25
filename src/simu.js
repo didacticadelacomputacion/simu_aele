@@ -57,6 +57,9 @@ Proyecto proyecto sin nombre {\n\
       en mi matriz led\n\
   }\n\
 }";
+  Simu.textoInicial = "\
+Proyecto proyecto sin nombre {\n\
+}";
   Simu.IniciarConCódigo(Simu.textoInicial);
 };
 
@@ -92,13 +95,13 @@ Simu.IniciarConCódigo = function(código) {
   elementosEscritorio.push(Simu.panelDiseño);
   Simu.escritorio = Mila.Pantalla.nuevoPanel({elementos:elementosEscritorio, disposicion: "Horizontal"});
 
-  Simu.botonEjecutar = Mila.Pantalla.nuevoBoton({texto:"Ejecutar", funcion:Simu.Ejecutar});
-  Simu.botonPausar = Mila.Pantalla.nuevoBoton({texto:"Pausar", funcion:Simu.Pausar});
-  Simu.botonDetener = Mila.Pantalla.nuevoBoton({texto:"Detener", funcion:Simu.Detener});
-  Simu.botonContinuar = Mila.Pantalla.nuevoBoton({texto:"Continuar", funcion:Simu.Continuar});
-  Simu.botonReiniciar = Mila.Pantalla.nuevoBoton({texto:"Reiniciar", funcion:Simu.Reiniciar});
+  Simu.botonEjecutar = Mila.Pantalla.nuevoBoton({texto:"Ejecutar", funcion:Simu.Ejecutar,colorFondo:"#fff"});
+  Simu.botonPausar = Mila.Pantalla.nuevoBoton({texto:"Pausar", funcion:Simu.Pausar,colorFondo:"#fff"});
+  Simu.botonDetener = Mila.Pantalla.nuevoBoton({texto:"Detener", funcion:Simu.Detener,colorFondo:"#fff"});
+  Simu.botonContinuar = Mila.Pantalla.nuevoBoton({texto:"Continuar", funcion:Simu.Continuar,colorFondo:"#fff"});
+  Simu.botonReiniciar = Mila.Pantalla.nuevoBoton({texto:"Reiniciar", funcion:Simu.Reiniciar,colorFondo:"#fff"});
   Simu.botoneraEjecución = Mila.Pantalla.nuevoPanel({disposicion:"Horizontal",
-    elementos:Simu.botonesDetenido(),alto:"Minimizar"
+    elementos:Simu.botonesDetenido(),alto:"Minimizar",grosorBorde:1,colorBorde:"#aaa",colorFondo:"#aaa"
   });
 
   const elementosMenúSuperior = [Simu.botoneraEjecución];
@@ -124,19 +127,19 @@ Simu.IniciarConCódigo = function(código) {
   // Pantalla Boom
   Simu.etiquetaBoom = Mila.Pantalla.nuevaEtiqueta({texto:"-",ancho:"Maximizar"});
   Mila.Pantalla.nueva({elementos:[
+    Mila.Pantalla.nuevoPanel({elementos:[Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("boom.png"),alto:"Maximizar",cssAdicional:{
+      position:"static","margin-left":"auto","margin-right":"auto",display:"table"}
+    })],ancho:"Maximizar",alto:"Maximizar"}),
     Mila.Pantalla.nuevoPanel({elementos:[
-        Mila.Pantalla.nuevaEtiqueta({texto:"BOOM",ancho:"Maximizar"}),
-        Simu.etiquetaBoom,
-        Mila.Pantalla.nuevoPanel({elementos:[Mila.Pantalla.nuevoBoton({texto:"Aceptar",cssAdicional:{
-          position:"static","margin-left":"auto","margin-right":"auto",display:"table"},
+      Mila.Pantalla.nuevaEtiqueta({texto:"BOOM",ancho:"Maximizar"}),
+      Simu.etiquetaBoom,
+      Mila.Pantalla.nuevoPanel({elementos:[Mila.Pantalla.nuevoBoton({texto:"Aceptar",cssAdicional:{
+        position:"static","margin-left":"auto","margin-right":"auto",display:"table"},
         funcion:Simu.CerrarPantallaBoom})]})
       ],ancho:"Maximizar",alto:"Maximizar"}
-    ),
-      Mila.Pantalla.nuevaImagen({ruta:Simu.rutaImagen("boom.png"),alto:"Maximizar",cssAdicional:{
-        position:"static","margin-left":"auto","margin-right":"auto",display:"block"}
-      })
+    )
     ],
-    disposicion:Mila.Pantalla.DisposicionVerticalInvertida
+    disposicion:Mila.Pantalla.DisposicionVertical
   }, "Boom");
 };
 

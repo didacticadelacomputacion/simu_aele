@@ -129,7 +129,7 @@ Simu.Lenguaje.comandosPrimitivos = {
   "EncenderBuzzer":{
     p:P([tt("Encender"),tt("buzzer"),rec("EXPRESIÓN"), 
       opt(sec([tt("tocando"), tt("la"), tt("nota"), rec("EXPRESIÓN")])), 
-      opt(sec([tt("durante"), rec("EXPRESIÓN"), opt(sec([tt("ms"), tt("s"), tt("mms")]))]))
+      opt(sec([tt("durante"), rec("EXPRESIÓN"), opt(o([tt("ms"), tt("s"), tt("mms")]))]))
     ],function(tokens, textoOriginal) {
       const hijos = {pin:Simu.Lenguaje.comoPin(tokens[2])};
       if(tokens.length > 3 && Peque.Parser.esTokenAtómico(tokens[3]) && tokens[3].texto() == 'tocando') {
@@ -166,7 +166,7 @@ Simu.Lenguaje.comandosPrimitivos = {
       return código;
     },
     exec:function(parametros) {
-      Simu.Diseño.EncenderBuzzer(parametros.pin, parametros.nota, parametros.duración);
+      Simu.Diseño.EncenderBuzzer(parametros.pin, parametros.nota);
     }
   },
   "ApagarBuzzer":{

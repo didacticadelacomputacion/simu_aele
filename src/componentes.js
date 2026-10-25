@@ -1,7 +1,7 @@
 Mila.Módulo({
   define:"Simu.Componentes",
   necesita:["$milascript/base"],
-  usa:["$milascript/geometria","$milascript/svg","$milascript/dibujo","carga"]
+  usa:["$milascript/geometria","$milascript/svg","$milascript/dibujo","$milascript/audio","carga"]
 });
 
 // Componente genérico (superclase de todos los componentes)
@@ -178,6 +178,15 @@ Simu.Componentes._Placa.prototype.dibujo = function() {
   ).cons(this._dibujoBase)/*.snoc(this._led.dibujo)*/, {escala:0.5});
 };
 
+Simu.Componentes._Componente.prototype.esUnaPlaca = function() {
+  Mila.Contrato({
+    Propósito: ["Indicar si este componente es una placa.", Mila.Tipo.Booleano]
+  });
+  return false;
+};
+
+Simu.Componentes._Placa.prototype.esUnaPlaca = function() { return true; };
+
 // Pin
 
 Simu.Componentes._Pin = function Pin() {};
@@ -200,6 +209,15 @@ Simu.Componentes.nuevoPin = function(datosComponente) {
   nuevo.Inicializar(datosComponente);
   return nuevo;
 };
+
+Simu.Componentes._Componente.prototype.esUnPin = function() {
+  Mila.Contrato({
+    Propósito: ["Indicar si este componente es un pin.", Mila.Tipo.Booleano]
+  });
+  return false;
+};
+
+Simu.Componentes._Pin.prototype.esUnPin = function() { return true; };
 
 // Led
 
@@ -305,8 +323,6 @@ Simu.Componentes._NuevoGradienteDeBrillo_ = function() {
   return {id, paradaCentro, paradaMedia, paradaFinDelBrillo, paradaBorde};
 };
 
-
-
 Simu.Componentes._Led.prototype.dibujo = function() {
   Mila.Contrato({
     Propósito: ["Describir el dibujo de este LED.", Mila.Tipo.Dibujo]
@@ -359,13 +375,21 @@ Simu.Componentes._Led.prototype.EstablecerValorEn_ = function(valor, intensidad)
   this._brillo.capa.CambiarEstilo_A_('opacidadFondo', opacidad);
 };
 
-
 Simu.Componentes._Led.prototype.Reiniciar = function() {
   Mila.Contrato({
     Propósito: "Devolver este LED a su estado apagado."
   });
   this.EstablecerValorEn_("LOW", "BINARIA");
 };
+
+Simu.Componentes._Componente.prototype.esUnLed = function() {
+  Mila.Contrato({
+    Propósito: ["Indicar si este componente es un led.", Mila.Tipo.Booleano]
+  });
+  return false;
+};
+
+Simu.Componentes._Led.prototype.esUnLed = function() { return true; };
 
 // Buzzer
 
@@ -405,6 +429,8 @@ Simu.Componentes.nuevoBuzzer = function(datosComponente) {
     );
   }
   // nuevo._ondasDeSonido = ...
+  nuevo._canal = Mila.Audio.nuevoCanal();
+  nuevo._canal.EstablecerVolumenEn_(20);
   return nuevo;
 };
 
@@ -416,6 +442,39 @@ Simu.Componentes._Buzzer.prototype.dibujo = function() {
     (clave, valor, rec) => rec.cons(valor.dibujo), []
   ).cons(this._dibujoBase)/*.snoc(this._ondasDeSonido.dibujo)*/);
 };
+
+Simu.Componentes._Buzzer.prototype.TocarNota_ = function(nota) {
+  Mila.Contrato({
+    Propósito: "Reproducir la nota dada (recibida como texto) en este buzzer.",
+    Parámetros: [
+      [nota, Mila.Tipo.Texto]
+    ]
+  });
+  this._canal.Reproducir(nota);
+};
+
+Simu.Componentes._Buzzer.prototype.Detener = function() {
+  Mila.Contrato({
+    Propósito: "Detener el sonido de este buzzer."
+  });
+  this._canal.Detener();
+};
+
+Simu.Componentes._Buzzer.prototype.Reiniciar = function() {
+  Mila.Contrato({
+    Propósito: "Devolver este buzzer a su estado apagado."
+  });
+  this.Detener();
+};
+
+Simu.Componentes._Componente.prototype.esUnBuzzer = function() {
+  Mila.Contrato({
+    Propósito: ["Indicar si este componente es un buzzer.", Mila.Tipo.Booleano]
+  });
+  return false;
+};
+
+Simu.Componentes._Buzzer.prototype.esUnBuzzer = function() { return true; };
 
 // Servo
 

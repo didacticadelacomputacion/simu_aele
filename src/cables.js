@@ -489,3 +489,30 @@ Simu.Cables.ActualizarPosicionesCables_ = function () {
     }
   }
 };
+
+Simu.Cables.conexionesPlaca_ = function(placa) {
+  Mila.Contrato({
+    Propósito: [
+      "Describir la lista de pares pin-componente que están conectados a la placa dada.",
+      Mila.Tipo.ListaDe_(Mila.Tipo.RegistroCon_({
+        pin:Mila.Tipo.Texto,
+        componente:Mila.Tipo.Componente
+      }))
+    ],
+    Parámetros:[
+      [placa, Mila.Tipo.ComponentePlaca]
+    ]
+  });
+  return Simu.Cables._cables.fold(
+    ((x, rec) => rec.concatenadaCon_(
+      x.pinA.componente == placa
+        ? [{pin:x.pinA.pinKey, componente:x.pinB.componente}]
+        : (
+          x.pinB.componente == placa
+            ? [{pin:x.pinB.pinKey, componente:x.pinA.componente}]
+            : []
+        )
+    )),
+    []
+  );
+};
