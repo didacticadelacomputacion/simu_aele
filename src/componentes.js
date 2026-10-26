@@ -156,7 +156,12 @@ Simu.Componentes.nuevaPlaca = function(datosComponente) {
     (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
   );
   nuevo._pines = {};
-  for (const id of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,'A0','A1','A2','A3','A4','A5']) {
+  for (const id of [
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,
+    'A0','A1','A2','A3','A4','A5',
+    'Scl','Sda','Aref','Ioref','Nc','Reset',
+    'Gnd0','Gnd1','Gnd2','Vin','3v','5v'
+  ]) {
     nuevo._pines[`pin_${id}`] = {};
     Simu.Carga.CargarArchivoSvg_YLuego_(
       `${prefijoNombreArchivos}_pin_${id}.svg`,
@@ -175,7 +180,7 @@ Simu.Componentes._Placa.prototype.dibujo = function() {
   });
   return Mila.Dibujo.deGrupo_(this._pines.fold(
     (clave, valor, rec) => rec.cons(valor.dibujo), []
-  ).cons(this._dibujoBase)/*.snoc(this._led.dibujo)*/, {escala:0.5});
+  ).cons(this._dibujoBase)/*.snoc(this._led.dibujo)*/);
 };
 
 Simu.Componentes._Componente.prototype.esUnaPlaca = function() {
