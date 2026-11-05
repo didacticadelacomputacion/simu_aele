@@ -170,7 +170,17 @@ Simu.Componentes.nuevaPlaca = function(datosComponente) {
       }
     );
   }
-  // nuevo._led = ...
+  nuevo._leds = {};
+  for (const id of [
+    'On', 13, 'Tx', 'Rx'
+  ]) {
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `${prefijoNombreArchivos}_Led${id}.svg`,
+      (dibujo) => {
+        nuevo._leds[id] = {dibujo};
+      }
+    );
+  }
   return nuevo;
 };
 
@@ -179,8 +189,10 @@ Simu.Componentes._Placa.prototype.dibujo = function() {
     Propósito: ["Describir el dibujo de esta placa.", Mila.Tipo.Dibujo]
   });
   return Mila.Dibujo.deGrupo_(this._pines.fold(
-    (clave, valor, rec) => rec.cons(valor.dibujo), []
-  ).cons(this._dibujoBase)/*.snoc(this._led.dibujo)*/);
+    (clave, valor, rec) => rec.cons(valor.dibujo), (this._leds.fold(
+      (clave, valor, rec) => rec.cons(valor.dibujo), []
+    ))
+  ).cons(this._dibujoBase));
 };
 
 Simu.Componentes._Componente.prototype.esUnaPlaca = function() {
