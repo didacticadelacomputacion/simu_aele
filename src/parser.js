@@ -125,6 +125,12 @@ Simu.Parser.configuración = {
               textoOriginal
             });
           } else {
+            if (Mila.Audio.notaDesdeTexto(textoCompleto).aTexto() == textoCompleto) {
+              return Mila.AST.nuevoNodo({
+                tipoNodo: "LitaralNotaMusical",
+                campos: {valor: textoCompleto}
+              });
+            }
             // TODO: puede ser una invocación a función o un identificador (una variable, un parámetro, un índice o un valor).
               // Para el caso de la función, ver la nota del identificador de comandos.
             return Mila.AST.nuevoNodo({
@@ -321,6 +327,9 @@ Simu.Parser.dataNodoAJs = {
     return `${nodo.valor() == "cierto" ? "true" : "false"}`;
   },
   LiteralTexto: function(nodo, hijos) {
+    return `"${nodo.valor()}"`;
+  },
+  LitaralNotaMusical: function(nodo, hijos) {
     return `"${nodo.valor()}"`;
   },
   LiteralDibujo8x8: function(nodo, hijos) {

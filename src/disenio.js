@@ -199,7 +199,7 @@ Simu.Diseño.AgregarListenersEscenario = function() {
       Simu.InterfazMódulos.ActualizarOverlay_();
     }, {
       fInicial: function(dataArrastre) {
-        Simu.Diseño.arrastre.posiciónInicial = cámara.posición();
+        Simu.Diseño.arrastre = {posiciónInicial: cámara.posición()};
       },
       fFinal: function(dataArrastre) {
         Simu.Diseño.arrastre = Mila.Nada;
