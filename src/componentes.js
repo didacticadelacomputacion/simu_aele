@@ -390,6 +390,18 @@ Simu.Componentes._Led.prototype.EstablecerValorEn_ = function(valor, intensidad)
     opacidad = valor / 255;
   }
   this._brillo.capa.CambiarEstilo_A_('opacidadFondo', opacidad);
+  this._intensidadLuminica = opacidad;
+};
+
+
+Simu.Componentes._Led.prototype.intensidadLuminica = function() {
+  Mila.Contrato({
+    Propósito: [
+      "Describir qué tan intensamente está iluminando este LED, entre 0 (apagado) y 1 (máxima intensidad).",
+      Mila.Tipo.Numero
+    ]
+  });
+  return this._intensidadLuminica || 0;
 };
 
 Simu.Componentes._Led.prototype.Reiniciar = function() {
@@ -630,7 +642,66 @@ Simu.Componentes.nuevoLdr = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Ldr();
   nuevo.Inicializar(datosComponente);
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    "LDR_BASE.svg",
+    (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
+  );
+  nuevo._pines = {};
+  for (let nombrePin of ['AO', 'DO', 'GND', 'VCC']) {
+    nuevo._pines[`pin_${nombrePin}`] = {};
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `LDR_Pin${nombrePin}.svg`,
+      (dibujo) => {
+        nuevo._pines[`pin_${nombrePin}`].dibujo = dibujo;
+      }
+    );
+  }
   return nuevo;
+};
+
+
+Simu.Componentes._Ldr.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de este ldr.", Mila.Tipo.Dibujo]
+  });
+  return Mila.Dibujo.deGrupo_(this._pines.fold(
+    (clave, valor, rec) => rec.cons(valor.dibujo), []
+  ).cons(this._dibujoBase));
+};
+
+
+Simu.Componentes._Componente.prototype.esUnLdr = function() {
+  Mila.Contrato({
+    Propósito: ["Indicar si este componente es un ldr.", Mila.Tipo.Booleano]
+  });
+  return false;
+};
+
+
+Simu.Componentes._Ldr.prototype.esUnLdr = function() { return true; };
+
+
+Simu.Componentes._Ldr.prototype.nivelDeLuz = function() {
+  Mila.Contrato({
+    Propósito: [
+      "Describir el nivel de luz ambiente que detecta este ldr según qué tan cerca y encendidos estén los leds del escenario, entre 0 (oscuridad total) y 1 (máxima luz detectada).",
+      Mila.Tipo.Numero
+    ]
+  });
+  const ALCANCE = 200;
+  let nivel = 0;
+  for (let claveModulo in Simu.Diseño.componentes) {
+    const módulo = Simu.Diseño.componentes[claveModulo];
+    if (módulo.defineLaClave_('componente') && módulo.componente.esUnLed()) {
+      const otroLed = módulo.componente;
+      const dx = otroLed.posiciónEnX() - this.posiciónEnX();
+      const dy = otroLed.posiciónEnY() - this.posiciónEnY();
+      const distancia = Math.sqrt(dx*dx + dy*dy);
+      const aporte = otroLed.intensidadLuminica() * Math.max(0, 1 - distancia/ALCANCE);
+      nivel = Math.max(nivel, aporte);
+    }
+  }
+  return nivel;
 };
 
 // Monitor

@@ -66,18 +66,19 @@ Simu.Diseño.componentes = {
     clase:"BOARD", modelo:"UNO_R3",
     ubicación:Mila.Geometria.puntoEn__(0,200)
   },
- /* LED_8:{
+ LED_8:{
     clase:"LED", pin:8, modo: ['D','OUT'], color:"#f00",
     ubicación:Mila.Geometria.puntoEn__(0,0)
-  },
-  'LED_MATRIX_mi matriz led':{
-    clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
-    ubicación:Mila.Geometria.puntoEn__(0,800)
   },
   LDR_5:{
     clase:"LDR", pin:5, modo: ['D','IN'],
     ubicación:Mila.Geometria.puntoEn__(300,0)
   },
+  /* 'LED_MATRIX_mi matriz led':{
+    clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
+    ubicación:Mila.Geometria.puntoEn__(0,800)
+  },
+  
   ULTRASONIC_3_6:{
     clase:"ULTRASONIC", echo:3, trigger:6,
     ubicación:Mila.Geometria.puntoEn__(800,400)
@@ -154,6 +155,23 @@ Simu.Diseño.DibujarMódulos = function() {
   Simu.Diseño.AgregarListenersEscenario();
   Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
   Simu.Diseño.AgregarListenersAdicionales();
+  Simu.Diseño.IniciarMonitoreoDeLuz_();
+};
+
+
+Simu.Diseño.IniciarMonitoreoDeLuz_ = function() {
+  Mila.Contrato({
+    Propósito: "Actualizar periódicamente la lectura de luz de todos los ldr del escenario, sin depender de que el código los consulte."
+  });
+  if (Simu.Diseño._monitoreoDeLuzIniciado) {
+    return;
+  }
+  Simu.Diseño._monitoreoDeLuzIniciado = true;
+  setInterval(function() {
+    for (let claveModulo in Simu.Diseño.componentes) {
+      const módulo = Simu.Diseño.componentes[claveModulo];
+    }
+  }, 300);
 };
 
 Simu.Diseño.AgregarListenersAdicionales = function() {
@@ -330,11 +348,14 @@ Simu.Diseño.estáOscuro = function(pin) {
       [pin, Mila.Tipo.Texto]
     ]
   });
-  let claveModulo = `LDR_${pin}`;
-  if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
-    // TODO
-    // let valor = Simu.Diseño.componentes[claveModulo].componente.nivelDeLuz();
-    // return valor > 500; // ¿De dónde sacar este valor? ¿Ponerle un tornillo al módulo con el que se pueda interactuar?
+  if (Simu.Diseño.modo == "MODULOS") {
+    const componente = Simu.Diseño.componenteEnPin_(pin);
+    if (componente.esAlgo() && componente.esUnLdr()) {
+      const nivel = componente.nivelDeLuz();
+      console.log(`LDR (pin ${pin}): ${Math.round(nivel*100)}% de luz detectada`);
+      return nivel < 0.3;
+    }
+    Simu.Diseño.BOOM(`No hay un ldr en el pin ${pin}.`);
   }
   return false;
 };
@@ -350,14 +371,17 @@ Simu.Diseño.luminosidad = function(pin, intensidad) {
       [intensidad, Mila.Tipo.Texto] // PORCENTAJE o RAW
     ]
   });
-  let claveModulo = `LDR_${pin}`;
-  if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
-    // TODO
-    // let valor = Simu.Diseño.componentes[claveModulo].componente.nivelDeLuz();
-    // if (intensidad == 'PORCENTAJE') {
-    //   return valor;
-    // } // RAW
-    // return Math.round((100 - valor)*10.24);
+    if (Simu.Diseño.modo == "MODULOS") {
+    const componente = Simu.Diseño.componenteEnPin_(pin);
+    if (componente.esAlgo() && componente.esUnLdr()) {
+      const nivel = componente.nivelDeLuz();
+      console.log(`LDR (pin ${pin}): ${Math.round(nivel*100)}% de luz detectada`);
+      if (intensidad == "PORCENTAJE") {
+        return Math.round(nivel*100);
+      }
+      return Math.round((1-nivel)*1023);
+    }
+    Simu.Diseño.BOOM(`No hay un ldr en el pin ${pin}.`);
   }
   return 0;
 };

@@ -8,7 +8,7 @@ Mila.Módulo({
 });
 
 Simu.ajustes = {
-  modoCódigo:"NO", // VER, EDITAR, NO
+  modoCódigo:"EDITAR", // VER, EDITAR, NO
   modoVer:"MODULOS", // PINES, MODULOS
   placa:"UNO" // UNO MEGA NANO ...
 };
@@ -57,9 +57,9 @@ Proyecto proyecto sin nombre {\n\
       en mi matriz led\n\
   }\n\
 }";
-  Simu.textoInicial = "\
+ /* Simu.textoInicial = "\
 Proyecto proyecto sin nombre {\n\
-}";
+}";*/
   Simu.IniciarConCódigo(Simu.textoInicial);
 };
 
