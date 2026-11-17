@@ -1,4 +1,4 @@
-Mila.Módulo({
+﻿Mila.Módulo({
   define: "Simu.InterfazMódulos",
   necesita: ["$milascript/base"],
   usa: ["componentes", "disenio", "cables", "carga"],
@@ -8,6 +8,7 @@ Mila.Módulo({
 Simu.InterfazMódulos._tiposDeMóduloAgregables = [
   { clase: "LED", etiqueta: "Led" },
   { clase: "BUZZER", etiqueta: "Buzzer" },
+  { clase: "ULTRASONIC", etiqueta: "Sensor ultrasónico" },
  // { clase: "SERVO", etiqueta: "Servo" },
 ];
 
@@ -22,7 +23,11 @@ Simu.InterfazMódulos._menuContextual = null;
 Simu.InterfazMódulos._cerrarMenuAlClickear = null;
 Simu.InterfazMódulos._panelColor = null;
 Simu.InterfazMódulos._pickerColor = null;
-
+Simu.InterfazMódulos._iconoRotar = null;
+Simu.InterfazMódulos._arrastreRotación = null;
+Simu.InterfazMódulos._svgCono = null;
+Simu.InterfazMódulos._formaCono = null;
+Simu.InterfazMódulos._puntoImpacto = null;
 
 Simu.InterfazMódulos.Inicializar = function () {
   if (Simu.InterfazMódulos._lienzoSvg) {
@@ -176,6 +181,30 @@ Simu.InterfazMódulos.ActualizarOverlay_ = function () {
   Simu.InterfazMódulos._iconoMover.onpointerdown =
     Simu.InterfazMódulos._onPointerDownIcono_;
 
+  if (!Simu.InterfazMódulos._iconoRotar) {
+    const iconoRotar = document.createElement("div");
+    iconoRotar.title = "Rotar módulo (con Shift, de a 15°)";
+    iconoRotar.textContent = "⟳";
+    iconoRotar.style.cssText = [
+      "position:fixed",
+      "width:22px",
+      "height:22px",
+      "line-height:22px",
+      "text-align:center",
+      "background:#2d8cff",
+      "color:#fff",
+      "border-radius:5px",
+      "cursor:grab",
+      "user-select:none",
+      "z-index:901",
+    ].join(";");
+    document.body.appendChild(iconoRotar);
+    Simu.InterfazMódulos._iconoRotar = iconoRotar;
+  }
+  Simu.InterfazMódulos._iconoRotar.style.left = `${rect.right + MARGEN - 11}px`;
+  Simu.InterfazMódulos._iconoRotar.style.top = `${rect.top - MARGEN - 11}px`;
+  Simu.InterfazMódulos._iconoRotar.onpointerdown =
+    Simu.InterfazMódulos._onPointerDownIconoRotar_;
 
   const datos =
     Simu.Diseño.componentes[Simu.InterfazMódulos._claveSeleccionada];
@@ -183,6 +212,11 @@ Simu.InterfazMódulos.ActualizarOverlay_ = function () {
     Simu.InterfazMódulos._MostrarPanelColor_(datos.componente, rect, MARGEN);
   } else {
     Simu.InterfazMódulos._OcultarPanelColor_();
+  }
+  if (datos && datos.clase === "ULTRASONIC") {
+    Simu.InterfazMódulos._MostrarCono_(datos.componente);
+  } else {
+    Simu.InterfazMódulos._OcultarCono_();
   }
 };
 
@@ -207,6 +241,11 @@ Simu.InterfazMódulos._QuitarOverlaySelección_ = function () {
   }
   Simu.InterfazMódulos._iconoMover = null;
   Simu.InterfazMódulos._OcultarPanelColor_();
+  Simu.InterfazMódulos._OcultarCono_();
+  if (Simu.InterfazMódulos._iconoRotar && Simu.InterfazMódulos._iconoRotar.parentNode) {
+    Simu.InterfazMódulos._iconoRotar.parentNode.removeChild(Simu.InterfazMódulos._iconoRotar);
+  }
+  Simu.InterfazMódulos._iconoRotar = null;
 };
 
 
@@ -246,8 +285,7 @@ Simu.InterfazMódulos._MostrarPanelColor_ = function (componente, rect, margen) 
     componente.CambiarColorA_(Simu.InterfazMódulos._pickerColor.value);
   };
 
-
-  Simu.InterfazMódulos._panelColor.style.left = `${rect.right + margen + 6}px`;
+  Simu.InterfazMódulos._panelColor.style.left = `${rect.right + margen + 30}px`;
   Simu.InterfazMódulos._panelColor.style.top = `${rect.top - margen}px`;
 };
 
@@ -265,6 +303,105 @@ Simu.InterfazMódulos._OcultarPanelColor_ = function () {
   Simu.InterfazMódulos._pickerColor = null;
 };
 
+Simu.InterfazMódulos._PASO_ROTACIÓN = 15;
+
+Simu.InterfazMódulos._onPointerDownIconoRotar_ = function (evento) {
+  evento.preventDefault();
+  evento.stopPropagation();
+  const clave = Simu.InterfazMódulos._claveSeleccionada;
+  const entrada = Simu.InterfazMódulos._mapaNodos.find((e) => e.clave === clave);
+  if (!entrada) return;
+  const rect = entrada.nodo.getBoundingClientRect();
+  const centro = { x: (rect.left + rect.right) / 2, y: (rect.top + rect.bottom) / 2 };
+  const componente = Simu.Diseño.componentes[clave].componente;
+  Simu.InterfazMódulos._arrastreRotación = {
+    componente,
+    centro,
+    ánguloInicialDelPuntero: Simu.InterfazMódulos._ánguloDesde_Hasta_(centro, evento),
+    rotaciónInicial: componente.rotación(),
+  };
+  document.addEventListener("pointermove", Simu.InterfazMódulos._onPointerMoveIconoRotar_);
+  document.addEventListener("pointerup", Simu.InterfazMódulos._onPointerUpIconoRotar_);
+};
+
+Simu.InterfazMódulos._ánguloDesde_Hasta_ = function (centro, evento) {
+  return (Math.atan2(evento.clientY - centro.y, evento.clientX - centro.x) * 180) / Math.PI;
+};
+
+Simu.InterfazMódulos._onPointerMoveIconoRotar_ = function (evento) {
+  const arrastre = Simu.InterfazMódulos._arrastreRotación;
+  if (!arrastre) return;
+  let rotación =
+    arrastre.rotaciónInicial +
+    Simu.InterfazMódulos._ánguloDesde_Hasta_(arrastre.centro, evento) -
+    arrastre.ánguloInicialDelPuntero;
+  if (evento.shiftKey) {
+    const paso = Simu.InterfazMódulos._PASO_ROTACIÓN;
+    rotación = Math.round(rotación / paso) * paso;
+  }
+  arrastre.componente.CambiarRotaciónA_(rotación);
+  Simu.Cables.ActualizarPosicionesCables_();
+  Simu.InterfazMódulos.ActualizarOverlay_();
+};
+
+Simu.InterfazMódulos._onPointerUpIconoRotar_ = function () {
+  Simu.InterfazMódulos._arrastreRotación = null;
+  document.removeEventListener("pointermove", Simu.InterfazMódulos._onPointerMoveIconoRotar_);
+  document.removeEventListener("pointerup", Simu.InterfazMódulos._onPointerUpIconoRotar_);
+};
+
+Simu.InterfazMódulos._MostrarCono_ = function (componente) {
+  const cono = componente.conoEnPantalla();
+  if (!cono) return;
+  const rectLienzo = Simu.InterfazMódulos._lienzoSvg.getBoundingClientRect();
+
+  if (!Simu.InterfazMódulos._svgCono) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.style.cssText = "position:fixed;pointer-events:none;overflow:hidden;z-index:899";
+    const forma = document.createElementNS(ns, "path");
+    forma.setAttribute("fill", "none");
+    forma.setAttribute("stroke", "#2d8cff");
+    forma.setAttribute("stroke-width", "2");
+    forma.setAttribute("stroke-dasharray", "6 4");
+    const impacto = document.createElementNS(ns, "circle");
+    impacto.setAttribute("r", "5");
+    impacto.setAttribute("fill", "#e74c3c");
+    svg.appendChild(forma);
+    svg.appendChild(impacto);
+    document.body.appendChild(svg);
+    Simu.InterfazMódulos._svgCono = svg;
+    Simu.InterfazMódulos._formaCono = forma;
+    Simu.InterfazMódulos._puntoImpacto = impacto;
+  }
+
+  const svg = Simu.InterfazMódulos._svgCono;
+  svg.style.left = `${rectLienzo.left}px`;
+  svg.style.top = `${rectLienzo.top}px`;
+  svg.style.width = `${rectLienzo.width}px`;
+  svg.style.height = `${rectLienzo.height}px`;
+
+  Simu.InterfazMódulos._formaCono.setAttribute(
+    "d",
+    "M " + cono.esquinas.map((e) => `${e.x - rectLienzo.left} ${e.y - rectLienzo.top}`).join(" L ") + " Z",
+  );
+  const impacto = Simu.InterfazMódulos._puntoImpacto;
+  const chocó = cono.distanciaEnPixeles !== null;
+  impacto.style.display = chocó ? "" : "none";
+  if (chocó) {
+    impacto.setAttribute("cx", cono.puntoDetectado.x - rectLienzo.left);
+    impacto.setAttribute("cy", cono.puntoDetectado.y - rectLienzo.top);
+  }
+};
+
+Simu.InterfazMódulos._OcultarCono_ = function () {
+  if (Simu.InterfazMódulos._svgCono && Simu.InterfazMódulos._svgCono.parentNode) {
+    Simu.InterfazMódulos._svgCono.parentNode.removeChild(Simu.InterfazMódulos._svgCono);
+  }
+  Simu.InterfazMódulos._svgCono = null;
+  Simu.InterfazMódulos._formaCono = null;
+  Simu.InterfazMódulos._puntoImpacto = null;
+};
 
 Simu.InterfazMódulos._onPointerDownIcono_ = function (evento) {
   evento.preventDefault();

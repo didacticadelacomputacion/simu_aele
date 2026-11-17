@@ -74,14 +74,13 @@ Simu.Diseño.componentes = {
     clase:"LDR", pin:5, modo: ['D','IN'],
     ubicación:Mila.Geometria.puntoEn__(300,0)
   },
-  /* 'LED_MATRIX_mi matriz led':{
-    clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
-    ubicación:Mila.Geometria.puntoEn__(0,800)
-  },
-  
   ULTRASONIC_3_6:{
     clase:"ULTRASONIC", echo:3, trigger:6,
     ubicación:Mila.Geometria.puntoEn__(800,400)
+  },
+  /* 'LED_MATRIX_mi matriz led':{
+    clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
+    ubicación:Mila.Geometria.puntoEn__(0,800)
   },
   BUZZER_9:{
     clase:"BUZZER", pin:9,
@@ -330,12 +329,42 @@ Simu.Diseño.distancia = function(echo, trigger) {
       [trigger, Mila.Tipo.Texto]
     ]
   });
-  let claveModulo = `ULTRASONIC_${echo}_${trigger}`;
-  if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
-    // TODO
-    // return Simu.Diseño.componentes[claveModulo].componente.distancia();
+  if (Simu.Diseño.modo == "MODULOS") {
+    const sonar = Simu.Diseño.componenteEnPin_(echo);
+    if (sonar.esAlgo() && sonar.esUnSonar() && sonar === Simu.Diseño.componenteEnPin_(trigger)) {
+      return sonar.distanciaEnCm();
+    }
+    Simu.Diseño.BOOM(`No hay un sonar conectado a los pines ${echo} y ${trigger}.`);
   }
   return 0;
+};
+
+Simu.Diseño.nodoHtmlDe_ = function(componente) {
+  Mila.Contrato({
+    Propósito: "Describir el nodo html con el que se dibuja el componente dado en el escenario, o null si no se está dibujando.",
+    Parámetros: [
+      [componente, Mila.Tipo.Componente]
+    ]
+  });
+  const índice = Object.keys(Simu.Diseño.componentes).findIndex(
+    clave => Simu.Diseño.componentes[clave].componente === componente
+  );
+  const dibujable = Simu.Diseño.escenario ? Simu.Diseño.escenario._lienzo._contenido[índice] : null;
+  return (índice >= 0 && dibujable && dibujable._nodoHtml) ? dibujable._nodoHtml : null;
+};
+
+Simu.Diseño.rectángulosEnPantallaDeLosDemásComponentes_ = function(componente) {
+  Mila.Contrato({
+    Propósito: "Describir la lista de rectángulos (en coordenadas de pantalla) que ocupan en el escenario todos los componentes menos el dado.",
+    Parámetros: [
+      [componente, Mila.Tipo.Componente]
+    ]
+  });
+  return Object.values(Simu.Diseño.componentes)
+    .filter(datos => datos.componente && datos.componente !== componente)
+    .map(datos => Simu.Diseño.nodoHtmlDe_(datos.componente))
+    .filter(nodo => nodo)
+    .map(nodo => nodo.getBoundingClientRect());
 };
 
 Simu.Diseño.estáOscuro = function(pin) {

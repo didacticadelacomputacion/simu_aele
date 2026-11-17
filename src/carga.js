@@ -58,3 +58,25 @@ Simu.Carga.CargarArchivoSvg_YLuego_ = function(ruta, función) {
     }
   );
 };
+
+Simu.Carga.CargarTamañoDeSvg_YLuego_ = function(ruta, función) {
+  Mila.Contrato({
+    Propósito: "Declarar una carga para leer el tamaño (ancho y alto del viewBox) del archivo svg dado y ejecutar la función dada, con ese tamaño, al terminar.",
+    Parámetros: [
+      [ruta, Mila.Tipo.Texto],
+      [función, Mila.Tipo.Funcion]
+    ]
+  });
+  Simu.Carga.InformarInicioCarga();
+  Mila.Archivo.AbrirArchivo_YLuego_(
+    Simu.rutaImagen(ruta),
+    (resultado) => {
+      if (!resultado.falló()) {
+        const dom = (new DOMParser()).parseFromString(resultado.contenido, "image/svg+xml");
+        const [, , ancho, alto] = dom.documentElement.getAttribute("viewBox").split(/\s+/).map(Number);
+        función({ancho, alto});
+      }
+      Simu.Carga.InformarFinCarga();
+    }
+  );
+};
