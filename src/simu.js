@@ -150,7 +150,6 @@ Simu.Boom = function(código) {
 Simu.CerrarPantallaBoom = function() {
   Mila.Pantalla.CambiarA_("Principal");
   Simu.Diseño.AgregarListenersDeslizadores();
-  Simu.Diseño.AgregarListenersAdicionales();
 };
 
 Simu.PantallaBoom = function(msg) {

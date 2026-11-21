@@ -67,7 +67,7 @@ Simu.Diseño.componentes = {
     ubicación:Mila.Geometria.puntoEn__(0,200)
   },
  LED_8:{
-    clase:"LED", pin:8, modo: ['D','OUT'], color:"#f00",
+    clase:"LED", pin:8, modo: ['D','OUT'], color:"#ff0000",
     ubicación:Mila.Geometria.puntoEn__(0,0)
   },
   LDR_5:{
@@ -153,7 +153,8 @@ Simu.Diseño.DibujarMódulos = function() {
   Simu.Diseño.escenario = Mila.Pantalla.nuevoEscenario({cámara, escena, modoHtml:Mila.Pantalla.ModoHtmlLienzo.Svg});
   Simu.Diseño.AgregarListenersEscenario();
   Simu.Diseño.panel.CambiarElementosA_(Simu.Diseño.escenario);
-  Simu.Diseño.AgregarListenersAdicionales();
+  Simu.Cables.Inicializar();
+  Simu.InterfazMódulos.Inicializar();
   Simu.Diseño.IniciarMonitoreoDeLuz_();
 };
 
@@ -171,11 +172,6 @@ Simu.Diseño.IniciarMonitoreoDeLuz_ = function() {
       const módulo = Simu.Diseño.componentes[claveModulo];
     }
   }, 300);
-};
-
-Simu.Diseño.AgregarListenersAdicionales = function() {
-  Simu.Cables.Inicializar();
-  Simu.InterfazMódulos.Inicializar();
 };
 
 Simu.Diseño.AgregarListenersEscenario = function() {
