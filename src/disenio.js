@@ -326,8 +326,11 @@ Simu.Diseño.distancia = function(echo, trigger) {
     ]
   });
   if (Simu.Diseño.modo == "MODULOS") {
-    const sonar = Simu.Diseño.componenteEnPin_(echo);
-    if (sonar.esAlgo() && sonar.esUnSonar() && sonar === Simu.Diseño.componenteEnPin_(trigger)) {
+    const sonar = Simu.Diseño.componenteConectado_EnPines_('esUnSonar', {
+      [echo]: 'pin_Echo',
+      [trigger]: 'pin_Trigger'
+    });
+    if (sonar.esAlgo()) {
       return sonar.distanciaEnCm();
     }
     Simu.Diseño.BOOM(`No hay un sonar conectado a los pines ${echo} y ${trigger}.`);
@@ -374,8 +377,8 @@ Simu.Diseño.estáOscuro = function(pin) {
     ]
   });
   if (Simu.Diseño.modo == "MODULOS") {
-    const componente = Simu.Diseño.componenteEnPin_(pin);
-    if (componente.esAlgo() && componente.esUnLdr()) {
+    const componente = Simu.Diseño.componenteConectado_EnPines_('esUnLdr', {[pin]: 'pin_DO'});
+    if (componente.esAlgo()) {
       const nivel = componente.nivelDeLuz();
       console.log(`LDR (pin ${pin}): ${Math.round(nivel*100)}% de luz detectada`);
       return nivel < 0.3;
@@ -397,8 +400,8 @@ Simu.Diseño.luminosidad = function(pin, intensidad) {
     ]
   });
     if (Simu.Diseño.modo == "MODULOS") {
-    const componente = Simu.Diseño.componenteEnPin_(pin);
-    if (componente.esAlgo() && componente.esUnLdr()) {
+    const componente = Simu.Diseño.componenteConectado_EnPines_('esUnLdr', {[pin]: 'pin_AO'});
+    if (componente.esAlgo()) {
       const nivel = componente.nivelDeLuz();
       console.log(`LDR (pin ${pin}): ${Math.round(nivel*100)}% de luz detectada`);
       if (intensidad == "PORCENTAJE") {
@@ -501,8 +504,8 @@ Simu.Diseño.SetLed = function(pin, valor, intensidad) {
     );
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
-    const componente = Simu.Diseño.componenteEnPin_(pin);
-    if (componente.esAlgo() && componente.esUnLed()) {
+    const componente = Simu.Diseño.componenteConectado_EnPines_('esUnLed', {[pin]: 'pin_positivo'});
+    if (componente.esAlgo()) {
        componente.EstablecerValorEn_(valor, intensidad);
     } else {
       Simu.Diseño.BOOM(`No hay un led en el pin ${pin}.`);
@@ -522,8 +525,8 @@ Simu.Diseño.EncenderBuzzer = function(pin, nota) {
     Simu.Diseño.AsignarValorPin(pin, "HIGH");
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
-    const componente = Simu.Diseño.componenteEnPin_(pin);
-    if (componente.esAlgo() && componente.esUnBuzzer()) {
+    const componente = Simu.Diseño.componenteConectado_EnPines_('esUnBuzzer', {[pin]: 'pin_positivo'});
+    if (componente.esAlgo()) {
        componente.TocarNota_(nota);
     } else {
       Simu.Diseño.BOOM(`No hay un buzzer en el pin ${pin}.`);
@@ -542,8 +545,8 @@ Simu.Diseño.ApagarBuzzer = function(pin) {
     Simu.Diseño.AsignarValorPin(pin, "LOW");
     Mila.Pantalla._Redimensionar();
   } else if (Simu.Diseño.modo == "MODULOS") {
-    const componente = Simu.Diseño.componenteEnPin_(pin);
-    if (componente.esAlgo() && componente.esUnBuzzer()) {
+    const componente = Simu.Diseño.componenteConectado_EnPines_('esUnBuzzer', {[pin]: 'pin_positivo'});
+    if (componente.esAlgo()) {
        componente.Detener();
     } else {
       Simu.Diseño.BOOM(`No hay un buzzer en el pin ${pin}.`);
@@ -643,24 +646,49 @@ Simu.Diseño.ReiniciarValoresMódulos = function() {
   }
 };
 
-Simu.Diseño.componenteEnPin_ = function(pin) {
+Simu.Diseño.placaEnEscenario = function() {
   Mila.Contrato({
     Propósito:[
-      "Describir el componente que está conectado en el pin dado o Nada si no hay ninguno.",
+      "Describir la placa que está en el escenario o undefined si todavía no hay ninguna.",
+      Mila.Tipo.O([Mila.Tipo.ComponentePlaca, Mila.Tipo.Nada])
+    ]
+  });
+  const datosPlaca = Object.values(Simu.Diseño.componentes).find(
+    datos => datos.componente && datos.componente.esUnaPlaca()
+  );
+  return datosPlaca ? datosPlaca.componente : undefined;
+};
+Simu.Diseño.componenteConectado_EnPines_ = function(tipo, pines) {
+  Mila.Contrato({
+    Propósito:[
+      "Describir el componente del tipo dado que está conectado a la placa a través de todos los pines dados, o Nada si no hay ninguno. \
+      El mapa de pines indica, para cada pin de la placa, a qué pin del componente tiene que estar conectado. \
+      Por ejemplo, un sonar conectado a los pines 3 y 6 se pide con ('esUnSonar', {3:'pin_Echo', 6:'pin_Trigger'}).",
       Mila.Tipo.O([Mila.Tipo.Componente, Mila.Tipo.Nada])
     ],
     Parámetros:[
-      [pin, Mila.Tipo.Texto]
+      [tipo, Mila.Tipo.Texto],
+      [pines]
     ]
   });
-  // TODO: que no esté harcodeada la placa
-  const placaActual = Simu.Diseño.componentes.UnoR3.componente;
-  return Simu.Cables.conexionesPlaca_(placaActual)
-    .ConElPrimeroQueCumple_Hacer_YSiNingunoCumple_(
-      (x => x.pin == `pin_${pin}`),
-      (x => x.componente),
-      (() => Mila.Nada)
+  const placa = Simu.Diseño.placaEnEscenario();
+  if (!placa || Object.keys(pines).length == 0) {
+    return Mila.Nada;
+  }
+  const conexiones = Simu.Cables.conexionesPlaca_(placa);
+  const candidatos = conexiones.filter(c => c.componente[tipo]());
+  for (const candidato of candidatos) {
+    const componente = candidato.componente;
+    const estáConectadoComoSePide = Object.keys(pines).every(
+      pinDeLaPlaca => conexiones.some(c =>
+        c.componente === componente && c.pin == `pin_${pinDeLaPlaca}` && c.pinComponente == pines[pinDeLaPlaca]
+      )
     );
+    if (estáConectadoComoSePide) {
+      return componente;
+    }
+  }
+  return Mila.Nada;
 };
 
 Simu.Diseño.placas = {

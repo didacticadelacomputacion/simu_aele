@@ -493,10 +493,12 @@ Simu.Cables.ActualizarPosicionesCables_ = function () {
 Simu.Cables.conexionesPlaca_ = function(placa) {
   Mila.Contrato({
     Propósito: [
-      "Describir la lista de pares pin-componente que están conectados a la placa dada.",
+      "Describir la lista de conexiones de la placa dada: para cada cable que sale de un pin de la placa, el pin de la placa, \
+      el componente del otro extremo y el pin de ese componente al que llega el cable.",
       Mila.Tipo.ListaDe_(Mila.Tipo.RegistroCon_({
         pin:Mila.Tipo.Texto,
-        componente:Mila.Tipo.Componente
+        componente:Mila.Tipo.Componente,
+        pinComponente:Mila.Tipo.Texto
       }))
     ],
     Parámetros:[
@@ -506,10 +508,10 @@ Simu.Cables.conexionesPlaca_ = function(placa) {
   return Simu.Cables._cables.fold(
     ((x, rec) => rec.concatenadaCon_(
       x.pinA.componente == placa
-        ? [{pin:x.pinA.pinKey, componente:x.pinB.componente}]
+        ? [{pin:x.pinA.pinKey, componente:x.pinB.componente, pinComponente:x.pinB.pinKey}]
         : (
           x.pinB.componente == placa
-            ? [{pin:x.pinB.pinKey, componente:x.pinA.componente}]
+            ? [{pin:x.pinB.pinKey, componente:x.pinA.componente, pinComponente:x.pinA.pinKey}]
             : []
         )
     )),

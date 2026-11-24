@@ -190,6 +190,41 @@ Simu.Componentes._Componente.prototype._dibujoRotable_ = function(partes) {
   return Mila.Dibujo.deGrupo_([this._grupoRotable]);
 };
 
+Simu.Componentes._Componente.prototype.CambiarPinesDeCorrienteA_ = function(pinesDeCorriente) {
+  Mila.Contrato({
+    Propósito: "Declarar qué pines de este componente necesitan estar conectados a la placa para que funcione: la tierra siempre y, \
+      si el componente la necesita, también la alimentación.",
+    Parámetros: [
+      [pinesDeCorriente]
+    ]
+  });
+  this._pinesDeCorriente = pinesDeCorriente;
+};
+Simu.Componentes._Componente.prototype.estáConectadoALaCorriente = function() {
+  Mila.Contrato({
+    Propósito: [
+      "Indicar si este componente tiene conectados a la placa los pines que necesita para funcionar: solo GND (por ejemplo, un led) \
+      o GND y VCC (por ejemplo, un sonar). Un componente que no declara pines de corriente siempre está conectado.",
+      Mila.Tipo.Booleano
+    ]
+  });
+  const pinesDeCorriente = this._pinesDeCorriente;
+  if (!pinesDeCorriente) {
+    return true;
+  }
+  const placa = Simu.Diseño.placaEnEscenario();
+  if (!placa) {
+    return false;
+  }
+  const conexiones = Simu.Cables.conexionesPlaca_(placa);
+  const estáConectado = (pinDelComponente, pinesDeLaPlaca) => conexiones.some(
+    c => c.componente === this && c.pinComponente === pinDelComponente && pinesDeLaPlaca.includes(c.pin)
+  );
+  return estáConectado(pinesDeCorriente.tierra, ['pin_Gnd0', 'pin_Gnd1', 'pin_Gnd2']) && (
+    !pinesDeCorriente.alimentación ||
+    estáConectado(pinesDeCorriente.alimentación, ['pin_5v', 'pin_3v'])
+  );
+};
 // Placa
 
 Simu.Componentes._Placa = function Placa() {};
@@ -318,6 +353,7 @@ Simu.Componentes.nuevoLed = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Led();
   nuevo.Inicializar(datosComponente);
+  nuevo.CambiarPinesDeCorrienteA_({tierra:'pin_negativo'});
   nuevo._tamaño = 'tamaño' in datosComponente ? datosComponente.tamaño : 10;
   nuevo.CargarTamañoSvgDe_(`LED_${nuevo._tamaño}mm_BASE.svg`);
   const prefijoNombreArchivos = `LED_${nuevo._tamaño}mm`;
@@ -452,6 +488,9 @@ Simu.Componentes._Led.prototype.EstablecerValorEn_ = function(valor, intensidad)
   } else /* RAW */ {
     opacidad = valor / 255;
   }
+  if (opacidad > 0 && !this.estáConectadoALaCorriente()) {
+    opacidad = 0;
+  }
   this._brillo.capa.CambiarEstilo_A_('opacidadFondo', opacidad);
   this._intensidadLuminica = opacidad;
 };
@@ -503,6 +542,7 @@ Simu.Componentes.nuevoBuzzer = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Buzzer();
   nuevo.Inicializar(datosComponente);
+  nuevo.CambiarPinesDeCorrienteA_({tierra:'pin_negativo'});
   nuevo.CargarTamañoSvgDe_('BUZZER_BASE.svg');
   const prefijoNombreArchivos = 'BUZZER';
   Simu.Carga.CargarArchivoSvg_YLuego_(
@@ -543,6 +583,10 @@ Simu.Componentes._Buzzer.prototype.TocarNota_ = function(nota) {
       [nota, Mila.Tipo.Texto]
     ]
   });
+  if (!this.estáConectadoALaCorriente()) {
+    this.Detener();
+    return;
+  }
   this._canal.Reproducir(nota);
 };
 
@@ -589,6 +633,7 @@ Simu.Componentes.nuevoServo = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Servo();
   nuevo.Inicializar(datosComponente);
+  nuevo.CambiarPinesDeCorrienteA_({tierra:'pin_negativo', alimentación:'pin_positivo'});
   nuevo.CargarTamañoSvgDe_('SERVO_BASE.svg');
   const prefijoNombreArchivos = 'SERVO';
   Simu.Carga.CargarArchivoSvg_YLuego_(
@@ -684,6 +729,7 @@ Simu.Componentes.nuevoSonar = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Sonar();
   nuevo.Inicializar(datosComponente);
+  nuevo.CambiarPinesDeCorrienteA_({tierra:'pin_GND', alimentación:'pin_VCC'});
   nuevo.CargarTamañoSvgDe_('ULTRASONIC_BASE.svg');
   Simu.Carga.CargarArchivoSvg_YLuego_(
     "ULTRASONIC_BASE.svg",
@@ -813,6 +859,9 @@ Simu.Componentes._Sonar.prototype.distanciaEnCm = function() {
       Mila.Tipo.Numero
     ]
   });
+  if (!this.estáConectadoALaCorriente()) {
+    return 0;
+  }
   const cono = this.conoEnPantalla();
   if (!cono || cono.distanciaEnPixeles === null) {
     return Simu.Componentes._Sonar.alcanceMáximoEnCm;
@@ -853,6 +902,7 @@ Simu.Componentes.nuevoLdr = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._Ldr();
   nuevo.Inicializar(datosComponente);
+  nuevo.CambiarPinesDeCorrienteA_({tierra:'pin_GND', alimentación:'pin_VCC'});
   nuevo.CargarTamañoSvgDe_('LDR_BASE.svg');
   Simu.Carga.CargarArchivoSvg_YLuego_(
     "LDR_BASE.svg",
@@ -900,6 +950,9 @@ Simu.Componentes._Ldr.prototype.nivelDeLuz = function() {
       Mila.Tipo.Numero
     ]
   });
+  if (!this.estáConectadoALaCorriente()) {
+    return 0;
+  }
   const ALCANCE = 200;
   let nivel = 0;
   for (let claveModulo in Simu.Diseño.componentes) {
