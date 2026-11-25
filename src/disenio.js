@@ -78,11 +78,11 @@ Simu.Diseño.componentes = {
     clase:"ULTRASONIC", echo:3, trigger:6,
     ubicación:Mila.Geometria.puntoEn__(800,400)
   },
-  /* 'LED_MATRIX_mi matriz led':{
+  'LED_MATRIX_mi matriz led':{
     clase:"LED_MATRIX", nombre:"mi matriz led", pines: [4, 7, 'A0'],
     ubicación:Mila.Geometria.puntoEn__(0,800)
   },
-  BUZZER_9:{
+  /* BUZZER_9:{
     clase:"BUZZER", pin:9,
     ubicación:Mila.Geometria.puntoEn__(600,0)
   },
@@ -582,20 +582,30 @@ Simu.Diseño.DibujarMatrizLed = function(dibujo, nombre) {
     ]
   });
   if (Simu.Diseño.modo == "MODULOS") {
-    let claveModulo = `LED_MATRIX_${nombre}`;
-    if (claveModulo in Simu.Diseño.componentes && 'componente' in Simu.Diseño.componentes[claveModulo]) {
-      for (let i=0; i<64; i++) {
-        if (dibujo.length > i && Simu.Diseño.componentes[claveModulo].componente.length > i) {
-          // TODO
-          // Simu.Diseño.componentes[claveModulo].componente.EstablecerLed_En_(i,
-          //   dibujo[i] == "O" ? "ON" : "OFF"
-          // );
-        }
-      }
+    const matriz = Simu.Diseño.matrizLedConNombre_(nombre);
+    if (matriz.esAlgo()) {
+      matriz.Dibujar_(dibujo);
+    } else {
+      Simu.Diseño.BOOM(`No hay una matriz led con el nombre ${nombre}.`);
     }
   }
 };
 
+Simu.Diseño.matrizLedConNombre_ = function(nombre) {
+  Mila.Contrato({
+    Propósito:[
+      "Describir la matriz led del escenario con el nombre dado o Nada si no hay ninguna.",
+      Mila.Tipo.O([Mila.Tipo.ComponenteMatrizLed, Mila.Tipo.Nada])
+    ],
+    Parámetros: [
+      [nombre, Mila.Tipo.Texto]
+    ]
+  });
+  const datos = Object.values(Simu.Diseño.componentes).find(
+    d => d.clase == "LED_MATRIX" && d.nombre == nombre && d.componente
+  );
+  return datos ? datos.componente : Mila.Nada;
+};
 Simu.Diseño.AsignarValorPin = function(pin, valor) {
   Mila.Contrato({
     Propósito:"Actualizar el panel de diseño para reflejar que se asignó el valor dado en el pin dado.",

@@ -706,9 +706,87 @@ Simu.Componentes.nuevaMatrizLed = function(datosComponente) {
   });
   const nuevo = new Simu.Componentes._MatrizLed();
   nuevo.Inicializar(datosComponente);
+  nuevo.CambiarPinesDeCorrienteA_({tierra:'pin_GND', alimentación:'pin_VCC'});
+  nuevo.CargarTamañoSvgDe_('MatrizLED_BASE.svg');
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    'MatrizLED_BASE.svg',
+    (dibujo) => nuevo.CambiarDibujoBaseA_(dibujo)
+  );
+  nuevo._círculosDeLeds = [];
+  Simu.Carga.CargarArchivoSvg_YLuego_(
+    'MatrizLED_LEDS.svg',
+    (dibujo) => {
+      nuevo._dibujoLeds = dibujo;
+      const círculos = Simu.Componentes._hojasDeDibujo_(dibujo).filter(hoja => hoja.estilo().colorFondo == '#cccccc');
+      for (let fila = 0; fila < 8; fila++) {
+        for (let columna = 0; columna < 8; columna++) {
+          nuevo._círculosDeLeds.push(círculos[columna * 8 + 7 - fila]);
+        }
+      }
+    }
+  );
+  nuevo._pines = {};
+  for (const nombrePin of ['VCC', 'GND', 'DIN', 'CS', 'CLK']) {
+    nuevo._pines[`pin_${nombrePin}`] = {};
+    Simu.Carga.CargarArchivoSvg_YLuego_(
+      `MatrizLED_Pin${nombrePin}.svg`,
+      (dibujo) => {
+        nuevo._pines[`pin_${nombrePin}`].dibujo = dibujo;
+      }
+    );
+  }
   return nuevo;
 };
 
+Simu.Componentes._hojasDeDibujo_ = function(dibujo) {
+  Mila.Contrato({
+    Propósito: [
+      "Describir la lista de dibujos que no son grupos y están dentro del dibujo dado (o el mismo dibujo si no es un grupo).",
+      Mila.Tipo.ListaDe_(Mila.Tipo.Dibujo)
+    ],
+    Parámetros: [
+      [dibujo, Mila.Tipo.Dibujo]
+    ]
+  });
+  return dibujo.clase().esIgualA_(Mila.Dibujo.ClaseDibujo.Grupo)
+    ? dibujo._grupo.flatMap(hijo => Simu.Componentes._hojasDeDibujo_(hijo))
+    : [dibujo];
+};
+Simu.Componentes._MatrizLed.prototype.dibujo = function() {
+  Mila.Contrato({
+    Propósito: ["Describir el dibujo de esta matriz led.", Mila.Tipo.Dibujo]
+  });
+  return this._dibujoRotable_(
+    [this._dibujoBase, this._dibujoLeds].concat(Object.values(this._pines).map(pin => pin.dibujo))
+  );
+};
+Simu.Componentes._MatrizLed.prototype._PintarLed_ = function(posición, encendido) {
+  Mila.Contrato({
+    Propósito: "Mostrar encendido o apagado el led de esta matriz en la posición dada (de 0 a 63, por filas de izquierda a derecha y de arriba hacia abajo).",
+    Parámetros: [
+      [posición, Mila.Tipo.Entero],
+      [encendido, Mila.Tipo.Booleano]
+    ]
+  });
+  this._círculosDeLeds[posición].CambiarColorFondoA_(encendido ? '#ff0000' : '#cccccc');
+};
+Simu.Componentes._MatrizLed.prototype.Dibujar_ = function(dibujo) {
+  Mila.Contrato({
+    Propósito: "Encender en esta matriz los leds que están en 'O' en el dibujo dado y apagar el resto. \
+      Si la matriz no está conectada a la corriente, todos los leds quedan apagados.",
+    Parámetros: [
+      [dibujo, Mila.Tipo.ListaDe_(Mila.Tipo.Texto)]
+    ]
+  });
+  const tieneCorriente = this.estáConectadoALaCorriente();
+  this._círculosDeLeds.forEach((círculo, i) => this._PintarLed_(i, tieneCorriente && dibujo[i] == "O"));
+};
+Simu.Componentes._MatrizLed.prototype.Reiniciar = function() {
+  Mila.Contrato({
+    Propósito: "Devolver esta matriz led a su estado apagado."
+  });
+  this._círculosDeLeds.forEach((círculo, i) => this._PintarLed_(i, false));
+};
 // Sonar
 
 Simu.Componentes._Sonar = function Sonar() {};
